@@ -18,7 +18,6 @@
         <slf4j.version>2.0.17</slf4j.version>
         <lombok.version>1.18.38</lombok.version>
         <dashscope-sdk-java.version>2.21.3</dashscope-sdk-java.version>
-        <langgraph4j.version>1.8.0</langgraph4j.version>
         <commons-csv.version>1.11.0</commons-csv.version>
         <tablesaw.version>0.44.0</tablesaw.version>
         <jfreechart.version>1.5.4</jfreechart.version>
