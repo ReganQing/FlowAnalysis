@@ -42,6 +42,7 @@ public final class ChartStyle {
 
     // ---- 基础色 ----
     public static final Color BG_WHITE        = new Color(255, 255, 255);
+    public static final Color TRANSPARENT     = new Color(0, 0, 0, 0);
     public static final Color TEXT_PRIMARY    = new Color(26, 26, 26);
     public static final Color TEXT_SECONDARY  = new Color(107, 107, 107);
     public static final Color DIVIDER         = new Color(224, 224, 224);
@@ -99,10 +100,10 @@ public final class ChartStyle {
 
     private static void applyCategoryPlotStyle(CategoryPlot plot) {
         plot.setBackgroundPaint(BG_WHITE);
-        plot.setDomainGridlinePaint(null);
+        plot.setDomainGridlinePaint(TRANSPARENT);
         plot.setRangeGridlinePaint(DIVIDER);
         plot.setRangeGridlineStroke(new BasicStroke(0.5f));
-        plot.setOutlinePaint(null);
+        plot.setOutlinePaint(TRANSPARENT);
         plot.setRangeAxisLocation(org.jfree.chart.axis.AxisLocation.BOTTOM_OR_LEFT);
 
         // X轴
@@ -134,10 +135,10 @@ public final class ChartStyle {
 
     private static void applyXYPlotStyle(XYPlot plot) {
         plot.setBackgroundPaint(BG_WHITE);
-        plot.setDomainGridlinePaint(null);
+        plot.setDomainGridlinePaint(TRANSPARENT);
         plot.setRangeGridlinePaint(DIVIDER);
         plot.setRangeGridlineStroke(new BasicStroke(0.5f));
-        plot.setOutlinePaint(null);
+        plot.setOutlinePaint(TRANSPARENT);
 
         NumberAxis xAxis = (NumberAxis) plot.getDomainAxis();
         xAxis.setTickLabelFont(NUMBER_FONT);
@@ -155,7 +156,7 @@ public final class ChartStyle {
 
     private static void applyPiePlotStyle(PiePlot plot) {
         plot.setBackgroundPaint(BG_WHITE);
-        plot.setOutlinePaint(null);
+        plot.setOutlinePaint(TRANSPARENT);
         plot.setLabelFont(LABEL_FONT);
         plot.setLabelPaint(TEXT_PRIMARY);
         plot.setLabelGap(0.02);

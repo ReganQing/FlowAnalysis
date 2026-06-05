@@ -1,10 +1,14 @@
 import dataAnalysis.model.*;
+import dataAnalysis.tools.ChartTools;
 
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.util.Base64;
 import java.util.List;
 
 /**
  * HTML 报告输出效果测试
- * 使用模拟数据验证报告样式，无需 API Key
+ * 使用模拟数据 + 真实图表验证报告样式，无需 API Key
  */
 public class ReportDemo {
 
@@ -61,12 +65,47 @@ public class ReportDemo {
             )
         );
 
-        // 3. 构建模拟 Base64 图表（用一个极简 PNG）
-        String fakeChartBase64 = generateMinimalPNG();
+        // 3. 用 ChartTools 生成真实图表
+        ChartTools chartTools = new ChartTools();
+        System.out.println("生成图表...");
 
+        String barPath = chartTools.createSimpleBarChart(
+            "区域销售分布",
+            "北京,上海,广州,深圳,杭州,成都,武汉,西安",
+            "312450,287630,256780,234560,195240,178920,156340,142670"
+        );
+        System.out.println("  柱状图: " + barPath);
+
+        String statsPath = chartTools.createStatsChart(
+            tech.tablesaw.api.Table.create("amount",
+                tech.tablesaw.api.DoubleColumn.create("amount",
+                    120.5, 340.0, 899.0, 1599.0, 5999.0,
+                    199.0, 499.0, 1999.0, 299.0, 99.0)),
+            "amount"
+        );
+        System.out.println("  统计图: " + statsPath);
+
+        String piePath = chartTools.createSimplePieChart(
+            "品类销售占比",
+            "电子产品,配件",
+            "1523400,452890"
+        );
+        System.out.println("  饼图: " + piePath);
+
+        String linePath = chartTools.createLineChart(
+            "月度销售趋势",
+            "3月,4月,5月,6月",
+            "520000,580000,610000,540000",
+            false
+        );
+        System.out.println("  折线图: " + linePath);
+
+        // 编码为 Base64
         List<ChartEmbed> charts = List.of(
-            new ChartEmbed("区域销售分布", fakeChartBase64, "各区域销售额对比"),
-            new ChartEmbed("销售额统计", fakeChartBase64, "均值、中位数、最小值、最大值")
+            new ChartEmbed("区域销售分布", encodeToBase64(barPath), "各区域销售额对比"),
+            new ChartEmbed("品类销售占比", encodeToBase64(piePath), "电子产品 vs 配件"),
+            new ChartEmbed("月度销售趋势", encodeToBase64(linePath), "近4个月销售额走势"),
+            new ChartEmbed("销售额统计", encodeToBase64(statsPath), "均值、中位数、最小值、最大值")
         );
 
         // 4. 构建分析章节
@@ -86,12 +125,15 @@ public class ReportDemo {
                 "区域销售分析"
             ),
             new ReportData.AnalysisSection(
-                "产品品类分析",
+                "品类与渠道分析",
                 "各品类销售贡献:\n" +
                 "  • 电子产品: ¥1,523,400 (77.1%)\n" +
                 "  • 配件: ¥452,890 (22.9%)\n\n" +
+                "渠道对比:\n" +
+                "  • 线下: ¥1,340,000 (67.8%) — 平均客单价 ¥2,340\n" +
+                "  • 线上: ¥636,290 (32.2%) — 平均客单价 ¥836\n\n" +
                 "电子产品中笔记本电脑单品贡献最高，配件品类中充电宝和电脑包表现较好。",
-                "产品品类分析"
+                "品类与渠道分析"
             )
         );
 
@@ -117,50 +159,21 @@ public class ReportDemo {
 
         String reportPath = dataAnalysis.report.HtmlReportGenerator.generate(reportData);
 
-        System.out.println("报告已生成: " + reportPath);
-        System.out.println("\n请在浏览器中打开查看效果。");
+        System.out.println("\n报告已生成: " + reportPath);
+        System.out.println("请在浏览器中打开查看效果。");
 
         // 尝试自动打开浏览器
         try {
-            java.awt.Desktop.getDesktop().browse(java.nio.file.Path.of(reportPath).toAbsolutePath().toUri());
+            java.awt.Desktop.getDesktop().browse(Path.of(reportPath).toAbsolutePath().toUri());
             System.out.println("已自动打开浏览器。");
         } catch (Exception e) {
             System.out.println("自动打开失败，请手动打开: " +
-                java.nio.file.Path.of(reportPath).toAbsolutePath());
+                Path.of(reportPath).toAbsolutePath());
         }
     }
 
-    /**
-     * 生成一个极简的 1x1 白色 PNG 用于占位
-     */
-    private static String generateMinimalPNG() {
-        // PNG 文件头 + 1x1 白色像素
-        byte[] png = new byte[] {
-            (byte) 0x89, 'P', 'N', 'G', '\r', '\n', 0x1A, '\n',  // PNG 签名
-            // IHDR chunk
-            0x00, 0x00, 0x00, 0x0D,  // length=13
-            'I', 'H', 'D', 'R',        // type
-            0x00, 0x00, 0x00, 0x01,    // width=1
-            0x00, 0x00, 0x00, 0x01,    // height=1
-            0x08,                      // bitDepth=8
-            0x02,                      // colorType=RGB
-            0x00,                      // compression
-            0x00,                      // filter
-            0x00,                      // interlace
-            0x1B, (byte) 0x6E, 0x45, (byte) 0xA7,  // CRC
-            // IDAT chunk (zlib header + deflate empty + adler32)
-            0x00, 0x00, 0x00, 0x0C,  // length=12
-            'I', 'D', 'A', 'T',        // type
-            0x78, 0x01,                // zlib header
-            0x01, 0x00, 0x00, (byte) 0xFF, (byte) 0xFF,  // deflate
-            0x00, 0x00, 0x00, 0x02,  // adler32 partial
-            0x00, 0x01,              // adler32 end
-            (byte) 0x8A, 0x0D, 0x01, (byte) 0x83,  // CRC
-            // IEND chunk
-            0x00, 0x00, 0x00, 0x00,  // length=0
-            'I', 'E', 'N', 'D',        // type
-            (byte) 0xAE, 0x42, 0x60, (byte) 0x82   // CRC
-        };
-        return java.util.Base64.getEncoder().encodeToString(png);
+    private static String encodeToBase64(String filePath) throws Exception {
+        byte[] bytes = Files.readAllBytes(Path.of(filePath));
+        return Base64.getEncoder().encodeToString(bytes);
     }
 }
