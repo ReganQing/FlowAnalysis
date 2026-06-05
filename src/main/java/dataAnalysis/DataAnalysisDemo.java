@@ -33,16 +33,19 @@ public class DataAnalysisDemo {
         }
 
         // 创建工作流
-        DataAnalysisWorkflow workflow = new DataAnalysisWorkflow();
+        DataAnalysisGraph graph = new DataAnalysisGraph();
 
         // 执行分析
         try {
-            DataAnalysisWorkflow.AnalysisResult result = workflow.execute(csvPath);
+            DataAnalysisGraph.AnalysisResult result = graph.execute(csvPath);
 
             // 输出结果
-            System.out.println(result.toString());
+            System.out.println(result);
             System.out.println("\n分析完成！");
             System.out.println("请查看报告: " + result.getReportPath());
+            if (!result.getErrors().isEmpty()) {
+                System.out.println("警告: " + result.getErrors());
+            }
 
         } catch (Exception e) {
             System.err.println("分析失败: " + e.getMessage());
