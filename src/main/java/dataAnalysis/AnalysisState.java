@@ -1,100 +1,109 @@
 package dataAnalysis;
 
-import java.util.*;
+import dataAnalysis.model.AnalysisPlan;
+import dataAnalysis.model.ChartEmbed;
+import dataAnalysis.model.DataProfile;
+import dataAnalysis.model.Insight;
+import org.bsc.langgraph4j.state.AgentState;
+import org.bsc.langgraph4j.state.Channel;
+import org.bsc.langgraph4j.state.Channels;
+
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
 
 /**
- * 数据分析工作流状态管理类
- * 用于在各个智能体之间传递状态和数据
+ * 数据分析工作流状态
+ * 基于LangGraph4J AgentState，在各节点间安全传递数据
  */
-public class AnalysisState {
+public class AnalysisState extends AgentState {
 
-    // 状态键定义
     public static final String CSV_PATH_KEY = "csv_path";
     public static final String RAW_DATA_KEY = "raw_data";
     public static final String CLEANED_DATA_KEY = "cleaned_data";
-    public static final String ANALYSIS_RESULT_KEY = "analysis_result";
-    public static final String CHART_PATHS_KEY = "chart_paths";
+    public static final String DATA_PROFILE_KEY = "data_profile";
+    public static final String ANALYSIS_PLAN_KEY = "analysis_plan";
+    public static final String ANALYSIS_RESULTS_KEY = "analysis_results";
+    public static final String INSIGHTS_KEY = "insights";
+    public static final String CHART_EMBEDS_KEY = "chart_embeds";
     public static final String REPORT_PATH_KEY = "report_path";
     public static final String ERRORS_KEY = "errors";
     public static final String CURRENT_STEP_KEY = "current_step";
     public static final String DATA_SUMMARY_KEY = "data_summary";
 
-    private final Map<String, Object> data;
+    /**
+     * LangGraph4J Channel Schema
+     */
+    public static final Map<String, Channel<?>> SCHEMA = Map.ofEntries(
+        Map.entry(CSV_PATH_KEY,           Channels.base(() -> null)),
+        Map.entry(RAW_DATA_KEY,           Channels.base(() -> null)),
+        Map.entry(CLEANED_DATA_KEY,       Channels.base(() -> null)),
+        Map.entry(DATA_PROFILE_KEY,       Channels.base(() -> null)),
+        Map.entry(ANALYSIS_PLAN_KEY,      Channels.base(() -> null)),
+        Map.entry(ANALYSIS_RESULTS_KEY,   Channels.appender(ArrayList::new)),
+        Map.entry(INSIGHTS_KEY,           Channels.appender(ArrayList::new)),
+        Map.entry(CHART_EMBEDS_KEY,       Channels.appender(ArrayList::new)),
+        Map.entry(REPORT_PATH_KEY,        Channels.base(() -> null)),
+        Map.entry(ERRORS_KEY,             Channels.appender(ArrayList::new)),
+        Map.entry(CURRENT_STEP_KEY,       Channels.base(() -> "START")),
+        Map.entry(DATA_SUMMARY_KEY,       Channels.base(() -> ""))
+    );
 
     public AnalysisState(Map<String, Object> initData) {
-        this.data = new HashMap<>(initData != null ? initData : Map.of());
+        super(initData);
     }
-
-    // 便捷访问方法
 
     public String csvPath() {
-        return get(CSV_PATH_KEY, "");
+        return value(CSV_PATH_KEY).orElse("").toString();
     }
 
+    @SuppressWarnings("unchecked")
     public Map<String, Object> rawData() {
-        return get(RAW_DATA_KEY, Map.of());
+        return value(RAW_DATA_KEY).map(d -> (Map<String, Object>) d).orElse(Map.of());
     }
 
+    @SuppressWarnings("unchecked")
     public Map<String, Object> cleanedData() {
-        return get(CLEANED_DATA_KEY, Map.of());
+        return value(CLEANED_DATA_KEY).map(d -> (Map<String, Object>) d).orElse(Map.of());
+    }
+
+    public DataProfile dataProfile() {
+        return value(DATA_PROFILE_KEY).map(d -> (DataProfile) d).orElse(null);
+    }
+
+    public AnalysisPlan analysisPlan() {
+        return value(ANALYSIS_PLAN_KEY).map(d -> (AnalysisPlan) d).orElse(null);
     }
 
     @SuppressWarnings("unchecked")
-    public Map<String, String> analysisResult() {
-        Object value = data.get(ANALYSIS_RESULT_KEY);
-        if (value instanceof Map) {
-            return (Map<String, String>) value;
-        }
-        return Map.of();
+    public List<Map<String, String>> analysisResults() {
+        return value(ANALYSIS_RESULTS_KEY).map(d -> (List<Map<String, String>>) d).orElse(List.of());
     }
 
     @SuppressWarnings("unchecked")
-    public List<String> chartPaths() {
-        Object value = data.get(CHART_PATHS_KEY);
-        if (value instanceof List) {
-            return (List<String>) value;
-        }
-        return List.of();
+    public List<Insight> insights() {
+        return value(INSIGHTS_KEY).map(d -> (List<Insight>) d).orElse(List.of());
+    }
+
+    @SuppressWarnings("unchecked")
+    public List<ChartEmbed> chartEmbeds() {
+        return value(CHART_EMBEDS_KEY).map(d -> (List<ChartEmbed>) d).orElse(List.of());
     }
 
     public String reportPath() {
-        return get(REPORT_PATH_KEY, "");
+        return value(REPORT_PATH_KEY).orElse("").toString();
     }
 
     @SuppressWarnings("unchecked")
     public List<String> errors() {
-        Object value = data.get(ERRORS_KEY);
-        if (value instanceof List) {
-            return (List<String>) value;
-        }
-        return List.of();
+        return value(ERRORS_KEY).map(d -> (List<String>) d).orElse(List.of());
     }
 
     public String currentStep() {
-        return get(CURRENT_STEP_KEY, "START");
+        return value(CURRENT_STEP_KEY).orElse("START").toString();
     }
 
     public String dataSummary() {
-        return get(DATA_SUMMARY_KEY, "");
-    }
-
-    // 通用获取方法
-    @SuppressWarnings("unchecked")
-    public <T> T get(String key, T defaultValue) {
-        Object value = data.get(key);
-        if (value == null) return defaultValue;
-        try {
-            return (T) value;
-        } catch (ClassCastException e) {
-            return defaultValue;
-        }
-    }
-
-    public Object get(String key) {
-        return data.get(key);
-    }
-
-    public Object getOrDefault(String key, Object defaultValue) {
-        return data.getOrDefault(key, defaultValue);
+        return value(DATA_SUMMARY_KEY).orElse("").toString();
     }
 }

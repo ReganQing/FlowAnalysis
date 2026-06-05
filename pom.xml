@@ -22,6 +22,7 @@
         <tablesaw.version>0.44.0</tablesaw.version>
         <jfreechart.version>1.5.4</jfreechart.version>
         <flexmark.version>0.64.0</flexmark.version>
+        <langgraph4j.version>1.8.17</langgraph4j.version>
     </properties>
 
     <dependencyManagement>
@@ -167,6 +168,18 @@
             <groupId>com.fasterxml.jackson.core</groupId>
             <artifactId>jackson-databind</artifactId>
             <version>2.17.0</version>
+        </dependency>
+
+        <!-- LangGraph4J (状态图工作流引擎) -->
+        <dependency>
+            <groupId>org.bsc.langgraph4j</groupId>
+            <artifactId>langgraph4j-core</artifactId>
+            <version>${langgraph4j.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.bsc.langgraph4j</groupId>
+            <artifactId>langgraph4j-langchain4j</artifactId>
+            <version>${langgraph4j.version}</version>
         </dependency>
     </dependencies>
 
