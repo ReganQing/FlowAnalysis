@@ -4,6 +4,7 @@
 <?import javafx.scene.layout.HBox?>
 <?import javafx.scene.layout.VBox?>
 <?import javafx.scene.control.ScrollPane?>
+<?import javafx.scene.control.SplitPane?>
 <?import javafx.scene.control.TextArea?>
 <?import javafx.scene.control.Button?>
 <?import javafx.scene.control.ComboBox?>
@@ -35,22 +36,26 @@
     </left>
 
     <center>
-        <VBox styleClass="chat-area">
-            <HBox styleClass="chat-header" alignment="CENTER_LEFT">
-                <Label styleClass="chat-header-title" text="新对话" fx:id="chatHeaderTitle"/>
-            </HBox>
-            <ScrollPane styleClass="messages-scroll" fx:id="messagesScroll" fitToWidth="true" VBox.vgrow="ALWAYS">
-                <VBox styleClass="messages-container" fx:id="messagesContainer"/>
-            </ScrollPane>
-            <VBox styleClass="input-area">
-                <HBox styleClass="input-container" alignment="CENTER" spacing="8">
-                    <ComboBox styleClass="model-selector" fx:id="modelSelector" prefWidth="160"/>
-                    <TextArea styleClass="chat-input" fx:id="chatInput"
-                              promptText="输入消息... (Enter 发送, Shift+Enter 换行)"
-                              prefRowCount="1" wrapText="true" HBox.hgrow="ALWAYS"/>
-                    <Button styleClass="btn-send" text="▶ 发送" fx:id="btnSend"/>
+        <SplitPane fx:id="centerSplitPane" orientation="HORIZONTAL"
+                   SplitPane.resizableWithParent="true">
+            <VBox styleClass="chat-area" fx:id="chatArea" minWidth="400">
+                <HBox styleClass="chat-header" alignment="CENTER_LEFT">
+                    <Label styleClass="chat-header-title" text="新对话" fx:id="chatHeaderTitle"/>
                 </HBox>
+                <ScrollPane styleClass="messages-scroll" fx:id="messagesScroll" fitToWidth="true" VBox.vgrow="ALWAYS">
+                    <VBox styleClass="messages-container" fx:id="messagesContainer"/>
+                </ScrollPane>
+                <VBox styleClass="input-area">
+                    <HBox styleClass="input-container" alignment="CENTER" spacing="8">
+                        <ComboBox styleClass="model-selector" fx:id="modelSelector" prefWidth="160"/>
+                        <Button styleClass="btn-attach" text="📎" fx:id="btnAttach"/>
+                        <TextArea styleClass="chat-input" fx:id="chatInput"
+                                  promptText="输入消息... (Enter 发送, Shift+Enter 换行)"
+                                  prefRowCount="1" wrapText="true" HBox.hgrow="ALWAYS"/>
+                        <Button styleClass="btn-send" text="▶ 发送" fx:id="btnSend"/>
+                    </HBox>
+                </VBox>
             </VBox>
-        </VBox>
+        </SplitPane>
     </center>
 </BorderPane>
