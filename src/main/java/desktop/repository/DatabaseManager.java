@@ -1,6 +1,7 @@
 package desktop.repository;
 
 import java.io.BufferedReader;
+import java.io.File;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.nio.charset.StandardCharsets;
@@ -20,7 +21,15 @@ public class DatabaseManager {
     private static DatabaseManager instance;
 
     private DatabaseManager() {
+        ensureDataDirectory();
         initDatabase();
+    }
+
+    private void ensureDataDirectory() {
+        File dataDir = new File("data");
+        if (!dataDir.exists()) {
+            dataDir.mkdirs();
+        }
     }
 
     public static synchronized DatabaseManager getInstance() {

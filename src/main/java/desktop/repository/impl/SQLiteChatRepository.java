@@ -60,6 +60,7 @@ public class SQLiteChatRepository implements ChatRepository {
             ps.setString(1, sessionId);
             ResultSet rs = ps.executeQuery();
             while (rs.next()) {
+                int toolDuration = rs.getInt("tool_duration");
                 messages.add(ChatMessage.fromRow(
                     rs.getLong("id"),
                     rs.getString("session_id"),
@@ -68,7 +69,7 @@ public class SQLiteChatRepository implements ChatRepository {
                     rs.getString("model_name"),
                     rs.getString("tool_name"),
                     rs.getString("tool_input"),
-                    rs.getObject("tool_duration", Integer.class),
+                    rs.wasNull() ? null : toolDuration,
                     rs.getString("created_at")
                 ));
             }
