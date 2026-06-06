@@ -12,16 +12,57 @@ Java Maven learning/demo project for **LangChain4j (v1.4.0)** demonstrating AI c
 
 ```bash
 mvn clean compile                                        # Compile
-mvn exec:java -Dexec.mainClass="AIServicesDemo"          # Run a demo
 mvn exec:java -Dexec.mainClass="dataAnalysis.DataAnalysisDemo"  # Multi-agent pipeline
 ```
 
 On Windows, set the env var in the same command:
 ```bash
-DASHSCOPE_API_KEY=your_key mvn exec:java -Dexec.mainClass="AIServicesDemo"
+DASHSCOPE_API_KEY=your_key mvn exec:java -Dexec.mainClass="dataAnalysis.DataAnalysisDemo"
 ```
 
-No test suite exists (`src/test/java/` is empty).
+Learning demos are in `src/test/java/` — run via:
+```bash
+mvn exec:java -Dexec.mainClass="AIServicesDemo"          # AI Services demo
+mvn exec:java -Dexec.mainClass="ChatMemoryDemo"           # Chat memory demo
+mvn exec:java -Dexec.mainClass="StreamingChatDemo"        # Streaming demo
+mvn exec:java -Dexec.mainClass="Text2Image"               # Image generation
+mvn exec:java -Dexec.mainClass="SentimentClassification"   # Sentiment analysis
+```
+
+### 桌面端应用 (JavaFX)
+
+```bash
+mvn clean compile                                        # Compile
+mvn exec:java -Dexec.mainClass="desktop.app.DesktopApp"  # Launch desktop app
+```
+
+需要 `DASHSCOPE_API_KEY` 环境变量。数据库自动初始化在 `data/assistant.db`。
+
+## Project Structure
+
+```
+src/main/java/
+├── model/                    # Shared infrastructure (ChatModelCreator, model configs)
+└── dataAnalysis/              # Core application — multi-agent data analysis pipeline
+    ├── chart/                 # Chart generation (JFreeChart)
+    ├── model/                 # Domain models (AnalysisPlan, Insight, ReportData, etc.)
+    ├── nodes/                 # 7 LangGraph4J pipeline nodes
+    ├── processing/            # Data profiling & token budget management
+    ├── report/               # HTML report generator
+    ├── router/               # Model routing (ModelRouter interface + implementations)
+    └── tools/                # @Tool-annotated methods for each node
+
+src/test/java/
+├── (no package)               # Root-level learning demos
+│   ├── AIServicesDemo, ChatMemoryDemo, StreamingChatDemo, StreamingChatDemo2
+│   ├── Text2Image, ReportDemo, SentimentClassification
+│   ├── ServiceWithMemoryForEachUserExample
+│   └── AIAssistant (interface used by AIServicesDemo)
+├── StructuralOutput/           # Structured output demos
+├── Tool/                      # Tool calling demos (Calculator, etc.)
+└── dataAnalysis/
+    └── DataAnalysisDemo.java  # Entry point for data analysis pipeline
+```
 
 ## Architecture
 
@@ -45,15 +86,15 @@ AIAssistant assistant = AiServices.create(AIAssistant.class, model);
 
 Central factory for all chat models. Hardcoded endpoint `https://dashscope.aliyuncs.com/compatible-mode/v1`, model `qwen-max-latest`. API key from `DASHSCOPE_API_KEY` env var. Also supports Ollama via `model/OllamaAIChatModel`.
 
-### Tool Calling — `Tool/`
+### Tool Calling — `src/test/java/Tool/`
 
 Methods annotated with `@Tool("description")` are auto-discovered by LangChain4j. Parameters use `@P("description")`. The `Calculator` class is the canonical example.
 
-### Structured Output — `StructuralOutput/`
+### Structured Output — `src/test/java/StructuralOutput/`
 
 Two approaches: (1) manual `ResponseFormat` with explicit `JsonSchema` builder, or (2) return a POJO from an interface method and LangChain4j infers the schema automatically.
 
-### Multi-Agent Data Analysis — `dataAnalysis/`
+### Multi-Agent Data Analysis — `src/main/java/dataAnalysis/`
 
 The most complex subsystem. A LangGraph4J state graph pipeline with 7 nodes and conditional routing:
 
@@ -85,7 +126,7 @@ Key design decisions documented in `docs/plans/2026-06-05-data-analysis-upgrade-
 | `langgraph4j-core` 1.8.17 | State graph workflow engine for data analysis pipeline |
 | `langgraph4j-langchain4j` 1.8.17 | LangGraph4J ↔ LangChain4j integration |
 | `langchain4j-easy-rag` 1.4.0-beta10 | RAG (package exists but unused) |
-| `dashscope-sdk-java` 2.21.3 | Direct DashScope SDK (used by Text2Image) |
+| `dashscope-sdk-java` 2.21.3 | Direct DashScope SDK (used by Text2Image demo in src/test) |
 | `tablesaw-core` 0.44.0 | Data analysis in dataAnalysis pipeline |
 | `commons-csv` 1.11.0 | CSV parsing |
 | `jfreechart` 1.5.4 | Chart generation |
@@ -94,9 +135,8 @@ Key design decisions documented in `docs/plans/2026-06-05-data-analysis-upgrade-
 ## Noteworthy Conventions
 
 - **Comments and user-facing strings are in Chinese** (Chinese tool descriptions, system messages, report content).
-- **No package declaration** on root-level demo classes — run with just the class name (`-Dexec.mainClass="AIServicesDemo"`).
-- **`dataAnalysis/` does use a package** — run with full qualified name (`-Dexec.mainClass="dataAnalysis.DataAnalysisDemo"`).
+- **No package declaration** on root-level demo classes in `src/test/java/` — run with just the class name (`-Dexec.mainClass="AIServicesDemo"`).
+- **`dataAnalysis/` does use a package** — entry point `DataAnalysisDemo.java` is in `src/test/java/dataAnalysis/`, run with full qualified name (`-Dexec.mainClass="dataAnalysis.DataAnalysisDemo"`).
 - **Tablesaw API quirks** — use `.by("column")` for grouping (NOT `.apply()`), use `countMissing()` not `missingCount()`, use `standardDeviation()` not `stdDev()`. See the resolved-issues section in `docs/DATA_ANALYSIS_WORKFLOW.md` if hitting Tablesaw compilation errors.
 - **JFreeChart 1.5.4** — `DefaultBoxAndWhiskerCategoryDataset` is in `org.jfree.data.statistics` (NOT `category`), `EmptyBlock` takes `(double, double)`, `setDefaultItemLabelsVisible` (with 's'), `BoxAndWhiskerRenderer.setMeanVisible` (NOT `setMeanValueVisible`).
 - **LangGraph4J 1.8.17** — use `Channels.base(() -> null)` for last-value semantics (NOT `Channels.lastValue()`), `Map.ofEntries()` for >10 entries, `AsyncCommandAction.of(AsyncEdgeAction.edge_async(...))` for conditional edges.
-- **RAG package** (`RAG/`) is scaffolded but empty.

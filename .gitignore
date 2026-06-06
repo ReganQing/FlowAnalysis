@@ -41,3 +41,6 @@ build/
 docs/plans/
 output/
 .claude/
+
+# SQLite 数据库
+data/

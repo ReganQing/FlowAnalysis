@@ -1,0 +1,325 @@
+/* ============================================
+   AI 助手桌面端 — Dark Mode 主题
+   ============================================ */
+
+/* === 根变量 === */
+.root {
+    -fx-base: #0A0E27;
+    -fx-background: #0A0E27;
+    -fx-control-inner-background: #111827;
+    -fx-control-inner-background-alt: #1E293B;
+    -fx-text-fill: #CBD5E1;
+    -fx-accent: #C8A97E;
+    -fx-focus-color: #3B82F6;
+    -fx-faint-focus-color: transparent;
+
+    -color-bg-primary: #0A0E27;
+    -color-bg-sidebar: #111827;
+    -color-bg-card: #1E293B;
+    -color-border: #334155;
+    -color-text-primary: #F1F5F9;
+    -color-text-secondary: #CBD5E1;
+    -color-text-muted: #94A3B8;
+    -color-accent-gold: #C8A97E;
+    -color-accent-blue: #3B82F6;
+    -color-success: #10B981;
+    -color-error: #EF4444;
+    -color-warning: #F59E0B;
+    -color-bubble-user: #1E3A2F;
+    -color-bubble-ai: #1E1E3A;
+    -color-tool-card: #2A1F0E;
+    -color-code-bg: #0D1117;
+
+    -fx-font-family: "Open Sans", "Microsoft YaHei", sans-serif;
+    -fx-font-size: 14px;
+}
+
+.main-container { -fx-background-color: -color-bg-primary; }
+
+.sidebar {
+    -fx-background-color: -color-bg-sidebar;
+    -fx-border-color: -color-border;
+    -fx-border-width: 0 1 0 0;
+    -fx-pref-width: 260px;
+}
+
+.sidebar-header { -fx-padding: 16 16 12 16; }
+
+.brand-title {
+    -fx-font-family: "Poppins", sans-serif;
+    -fx-font-size: 20px;
+    -fx-font-weight: 700;
+    -fx-text-fill: -color-accent-gold;
+}
+
+.search-field {
+    -fx-background-color: -color-bg-card;
+    -fx-background-radius: 8;
+    -fx-border-color: -color-border;
+    -fx-border-radius: 8;
+    -fx-text-fill: -color-text-secondary;
+    -fx-prompt-text-fill: -color-text-muted;
+    -fx-padding: 8 12;
+}
+
+.search-field:focused { -fx-border-color: -color-accent-blue; }
+
+.session-list {
+    -fx-background-color: transparent;
+    -fx-padding: 0;
+}
+
+.session-list .list-cell {
+    -fx-background-color: transparent;
+    -fx-background-radius: 8;
+    -fx-text-fill: -color-text-secondary;
+    -fx-padding: 10 12;
+    -fx-border-width: 0 0 0 3;
+    -fx-border-color: transparent;
+    -fx-cursor: hand;
+}
+
+.session-list .list-cell:hover { -fx-background-color: -color-bg-card; }
+
+.session-list .list-cell:selected {
+    -fx-background-color: -color-bg-card;
+    -fx-border-color: -color-accent-gold;
+}
+
+.session-title {
+    -fx-font-family: "Poppins", sans-serif;
+    -fx-font-size: 13px;
+    -fx-font-weight: 500;
+    -fx-text-fill: -color-text-secondary;
+}
+
+.sidebar-footer {
+    -fx-border-color: -color-border;
+    -fx-border-width: 1 0 0 0;
+    -fx-padding: 12 16;
+}
+
+.btn-new-chat {
+    -fx-background-color: -color-accent-gold;
+    -fx-background-radius: 8;
+    -fx-text-fill: #0A0E27;
+    -fx-font-weight: 600;
+    -fx-padding: 10 16;
+    -fx-cursor: hand;
+}
+
+.btn-new-chat:hover { -fx-background-color: derive(#C8A97E, 15%); }
+
+.btn-icon {
+    -fx-background-color: transparent;
+    -fx-text-fill: -color-text-muted;
+    -fx-cursor: hand;
+    -fx-padding: 6;
+    -fx-background-radius: 6;
+}
+
+.btn-icon:hover {
+    -fx-background-color: -color-bg-card;
+    -fx-text-fill: -color-text-primary;
+}
+
+.chat-area { -fx-background-color: -color-bg-primary; }
+
+.chat-header {
+    -fx-padding: 12 24;
+    -fx-border-color: -color-border;
+    -fx-border-width: 0 0 1 0;
+    -fx-alignment: center-left;
+}
+
+.chat-header-title {
+    -fx-font-family: "Poppins", sans-serif;
+    -fx-font-size: 16px;
+    -fx-font-weight: 600;
+    -fx-text-fill: -color-text-primary;
+}
+
+.messages-scroll {
+    -fx-background-color: -color-bg-primary;
+    -fx-fit-to-width: true;
+}
+
+.messages-container {
+    -fx-padding: 16 24;
+    -fx-max-width: 768px;
+    -fx-alignment: center;
+}
+
+.message-bubble {
+    -fx-background-radius: 12;
+    -fx-padding: 12 16;
+    -fx-max-width: 680px;
+}
+
+.message-bubble-user {
+    -fx-background-color: -color-bubble-user;
+    -fx-alignment: center-right;
+}
+
+.message-bubble-ai {
+    -fx-background-color: -color-bubble-ai;
+    -fx-alignment: center-left;
+}
+
+.message-text {
+    -fx-text-fill: -color-text-secondary;
+    -fx-font-size: 14px;
+    -fx-line-spacing: 1.6;
+}
+
+.message-meta {
+    -fx-font-size: 11px;
+    -fx-text-fill: -color-text-muted;
+    -fx-padding: 4 0 0 0;
+}
+
+.message-sender {
+    -fx-font-size: 13px;
+    -fx-font-weight: 600;
+    -fx-text-fill: -color-accent-gold;
+}
+
+.tool-card {
+    -fx-background-color: -color-tool-card;
+    -fx-background-radius: 8;
+    -fx-border-color: -color-accent-gold;
+    -fx-border-width: 2 0 0 0;
+    -fx-border-radius: 8;
+    -fx-padding: 12 16;
+    -fx-max-width: 560px;
+}
+
+.tool-card-header {
+    -fx-font-size: 13px;
+    -fx-font-weight: 600;
+    -fx-text-fill: -color-accent-gold;
+}
+
+.tool-card-input {
+    -fx-background-color: -color-code-bg;
+    -fx-background-radius: 4;
+    -fx-font-family: "JetBrains Mono", "Consolas", monospace;
+    -fx-font-size: 12px;
+    -fx-text-fill: #E6EDF3;
+    -fx-padding: 8;
+}
+
+.tool-card-result {
+    -fx-text-fill: -color-text-secondary;
+    -fx-font-size: 13px;
+}
+
+.tool-card-status-success { -fx-text-fill: -color-success; }
+.tool-card-status-error { -fx-text-fill: -color-error; }
+
+.input-area {
+    -fx-padding: 16 24;
+    -fx-border-color: -color-border;
+    -fx-border-width: 1 0 0 0;
+    -fx-background-color: -color-bg-primary;
+}
+
+.input-container {
+    -fx-background-color: -color-bg-card;
+    -fx-background-radius: 12;
+    -fx-border-color: -color-border;
+    -fx-border-radius: 12;
+    -fx-padding: 8 12;
+}
+
+.chat-input {
+    -fx-background-color: transparent;
+    -fx-text-fill: -color-text-secondary;
+    -fx-prompt-text-fill: -color-text-muted;
+    -fx-font-size: 14px;
+    -fx-max-height: 120px;
+    -fx-wrap-text: true;
+}
+
+.model-selector {
+    -fx-background-color: -color-bg-card;
+    -fx-background-radius: 6;
+    -fx-border-color: -color-border;
+    -fx-border-radius: 6;
+    -fx-text-fill: -color-text-secondary;
+    -fx-font-size: 12px;
+    -fx-padding: 4 8;
+}
+
+.model-selector .combo-box-popup .list-cell {
+    -fx-background-color: -color-bg-sidebar;
+    -fx-text-fill: -color-text-secondary;
+}
+
+.model-selector .combo-box-popup .list-cell:hover {
+    -fx-background-color: -color-bg-card;
+}
+
+.btn-send {
+    -fx-background-color: -color-accent-gold;
+    -fx-background-radius: 8;
+    -fx-text-fill: #0A0E27;
+    -fx-font-weight: 600;
+    -fx-padding: 8 16;
+    -fx-cursor: hand;
+}
+
+.btn-send:hover { -fx-background-color: derive(#C8A97E, 15%); }
+
+.btn-send:disabled {
+    -fx-background-color: -color-border;
+    -fx-text-fill: -color-text-muted;
+    -fx-opacity: 0.6;
+}
+
+.dialog-overlay { -fx-background-color: rgba(0, 0, 0, 0.6); }
+
+.dialog-panel {
+    -fx-background-color: -color-bg-sidebar;
+    -fx-background-radius: 12;
+    -fx-border-color: -color-border;
+    -fx-border-radius: 12;
+    -fx-padding: 24;
+    -fx-max-width: 480px;
+}
+
+.dialog-title {
+    -fx-font-family: "Poppins", sans-serif;
+    -fx-font-size: 18px;
+    -fx-font-weight: 600;
+    -fx-text-fill: -color-text-primary;
+}
+
+.dialog-label {
+    -fx-font-size: 13px;
+    -fx-text-fill: -color-text-muted;
+    -fx-padding: 8 0 4 0;
+}
+
+.dialog-input {
+    -fx-background-color: -color-bg-card;
+    -fx-background-radius: 6;
+    -fx-border-color: -color-border;
+    -fx-border-radius: 6;
+    -fx-text-fill: -color-text-secondary;
+    -fx-padding: 8 12;
+}
+
+.dialog-input:focused { -fx-border-color: -color-accent-blue; }
+
+.empty-state { -fx-alignment: center; -fx-spacing: 12; }
+.empty-state-icon { -fx-font-size: 48px; -fx-text-fill: -color-text-muted; -fx-opacity: 0.4; }
+.empty-state-text { -fx-font-size: 16px; -fx-text-fill: -color-text-muted; }
+
+.scroll-bar { -fx-background-color: transparent; }
+.scroll-bar .thumb { -fx-background-color: -color-border; -fx-background-radius: 4; -fx-pref-width: 6; }
+.scroll-bar .thumb:hover { -fx-background-color: -color-text-muted; }
+.scroll-bar .track { -fx-background-color: transparent; }
+.scroll-bar .increment-button, .scroll-bar .decrement-button { -fx-background-color: transparent; -fx-padding: 0; }
+.scroll-bar:vertical { -fx-opacity: 0; }
+.scroll-bar:vertical:hover { -fx-opacity: 1; }
