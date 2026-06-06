@@ -41,4 +41,4 @@ output/
 .claude/
 
 # SQLite 数据库
-data/
+data/logs/
