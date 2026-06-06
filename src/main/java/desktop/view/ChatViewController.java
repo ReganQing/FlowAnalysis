@@ -8,6 +8,7 @@ import desktop.service.ChatService;
 import desktop.service.ModelService;
 import desktop.service.SessionService;
 import desktop.service.StreamingCallback;
+import desktop.service.TitleService;
 import desktop.view.component.MessageBubble;
 import desktop.view.component.ToolCallCard;
 import javafx.application.Platform;
@@ -22,6 +23,9 @@ import javafx.scene.input.KeyEvent;
 import java.net.URL;
 import java.util.List;
 import java.util.ResourceBundle;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.function.Consumer;
 
 /**
  * 聊天主区域控制器 — 管理消息展示、输入、流式输出。
@@ -38,11 +42,16 @@ public class ChatViewController implements Initializable {
     private final ChatService chatService = new ChatService();
     private final SessionService sessionService = new SessionService();
     private final ModelService modelService = new ModelService();
+    private final TitleService titleService = new TitleService();
+    private final ExecutorService backgroundExecutor = Executors.newCachedThreadPool(runnable -> {
+        Thread thread = new Thread(runnable, "desktop-chat-worker");
+        thread.setDaemon(true);
+        return thread;
+    });
 
     private String currentSessionId;
-    private MessageBubble streamingBubble;
-    private StringBuilder streamingContent;
     private boolean isStreaming = false;
+    private Consumer<String> onSessionTitleUpdated = sessionId -> {};
 
     @Override
     public void initialize(URL location, ResourceBundle resources) {
@@ -73,6 +82,10 @@ public class ChatViewController implements Initializable {
                 modelService.setCurrentModel(newVal.modelName());
             }
         });
+    }
+
+    public void refreshCurrentModel() {
+        modelSelector.setValue(modelService.getCurrentModel());
     }
 
     private void setupInput() {
@@ -156,36 +169,53 @@ public class ChatViewController implements Initializable {
         setInputEnabled(false);
 
         String modelName = modelSelector.getValue().modelName();
-        streamingContent = new StringBuilder();
-        streamingBubble = MessageBubble.createStreamingPlaceholder(modelName);
-        messagesContainer.getChildren().add(streamingBubble);
+        String requestSessionId = currentSessionId;
+        StringBuilder responseContent = new StringBuilder();
+        MessageBubble responseBubble = MessageBubble.createStreamingPlaceholder(modelName);
+        messagesContainer.getChildren().add(responseBubble);
         scrollToBottom();
+        isStreaming = true;
 
-        chatService.sendMessage(currentSessionId, text, modelName, new StreamingCallback() {
+        backgroundExecutor.execute(() -> chatService.sendMessage(
+            requestSessionId, text, modelName, new StreamingCallback() {
             @Override
             public void onToken(String token) {
                 Platform.runLater(() -> {
-                    streamingContent.append(token);
-                    streamingBubble.updateContent(streamingContent.toString());
-                    scrollToBottom();
+                    responseContent.append(token);
+                    responseBubble.updateContent(responseContent.toString());
+                    if (requestSessionId.equals(currentSessionId)) {
+                        scrollToBottom();
+                    }
                 });
             }
 
             @Override
             public void onComplete(String fullResponse) {
+                chatService.saveAiMessage(requestSessionId, fullResponse, modelName);
+                boolean shouldGenerateTitle = chatService.loadHistory(requestSessionId).size() <= 2;
                 Platform.runLater(() -> {
-                    chatService.saveAiMessage(currentSessionId, fullResponse, modelName);
-                    streamingBubble.updateContent(fullResponse);
+                    responseBubble.completeContent(fullResponse);
                     setInputEnabled(true);
                     isStreaming = false;
-                    updateSessionTitleIfNeeded(text);
                 });
+                if (shouldGenerateTitle) {
+                    backgroundExecutor.execute(() -> {
+                        String title = titleService.generateTitle(text, fullResponse);
+                        sessionService.renameSession(requestSessionId, title);
+                        Platform.runLater(() -> {
+                            if (requestSessionId.equals(currentSessionId)) {
+                                chatHeaderTitle.setText(title);
+                            }
+                            onSessionTitleUpdated.accept(requestSessionId);
+                        });
+                    });
+                }
             }
 
             @Override
             public void onError(Throwable error) {
                 Platform.runLater(() -> {
-                    streamingBubble.updateContent("错误: " + error.getMessage());
+                    responseBubble.updateContent("错误: " + error.getMessage());
                     setInputEnabled(true);
                     isStreaming = false;
                 });
@@ -203,21 +233,11 @@ public class ChatViewController implements Initializable {
             @Override
             public void onToolCallComplete(String toolName, String result, long durationMs) {
                 Platform.runLater(() -> {
-                    chatService.saveToolMessage(currentSessionId, toolName, "", result, durationMs, modelName);
+                    chatService.saveToolMessage(requestSessionId, toolName, "", result, durationMs, modelName);
                 });
             }
-        });
+        }));
 
-        isStreaming = true;
-    }
-
-    private void updateSessionTitleIfNeeded(String firstMessage) {
-        if (chatService.loadHistory(currentSessionId).size() <= 2) {
-            String title = firstMessage.length() > 20
-                ? firstMessage.substring(0, 20) + "..." : firstMessage;
-            sessionService.renameSession(currentSessionId, title);
-            chatHeaderTitle.setText(title);
-        }
     }
 
     private void setInputEnabled(boolean enabled) {
@@ -230,4 +250,7 @@ public class ChatViewController implements Initializable {
     }
 
     public String getCurrentSessionId() { return currentSessionId; }
+    public void setOnSessionTitleUpdated(Consumer<String> callback) {
+        this.onSessionTitleUpdated = callback;
+    }
 }
