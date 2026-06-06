@@ -1,34 +1,73 @@
 /* ============================================
-   AI 助手桌面端 — Dark Mode 主题
+   AI 数据分析工具 — 石墨霜 (Graphite Frost) 主题
+   理智 · 冷静 · 精确
    ============================================ */
 
 /* === 根变量 === */
 .root {
-    -fx-base: #0A0E27;
-    -fx-background: #0A0E27;
-    -fx-control-inner-background: #111827;
-    -fx-control-inner-background-alt: #1E293B;
-    -fx-text-fill: #CBD5E1;
-    -fx-accent: #C8A97E;
-    -fx-focus-color: #3B82F6;
+    -fx-base: #121418;
+    -fx-background: #121418;
+    -fx-control-inner-background: #181B22;
+    -fx-control-inner-background-alt: #1E222A;
+    -fx-text-fill: #B0B8C4;
+    -fx-accent: #22D3EE;
+    -fx-focus-color: #22D3EE;
     -fx-faint-focus-color: transparent;
 
-    -color-bg-primary: #0A0E27;
-    -color-bg-sidebar: #111827;
-    -color-bg-card: #1E293B;
-    -color-border: #334155;
-    -color-text-primary: #F1F5F9;
-    -color-text-secondary: #CBD5E1;
-    -color-text-muted: #94A3B8;
-    -color-accent-gold: #C8A97E;
-    -color-accent-blue: #3B82F6;
-    -color-success: #10B981;
-    -color-error: #EF4444;
-    -color-warning: #F59E0B;
-    -color-bubble-user: #1E3A2F;
-    -color-bubble-ai: #1E1E3A;
-    -color-tool-card: #2A1F0E;
-    -color-code-bg: #0D1117;
+    /* 背景 */
+    -color-bg-primary: #121418;
+    -color-bg-sidebar: #181B22;
+    -color-bg-card: #1E222A;
+    -color-bg-elevated: #262B35;
+    -color-bg-code: #0D1017;
+
+    /* 边框 */
+    -color-border: #2E3440;
+
+    /* 文字 */
+    -color-text-primary: #E8ECF1;
+    -color-text-secondary: #B0B8C4;
+    -color-text-muted: #6B7685;
+
+    /* 强调 */
+    -color-accent-primary: #22D3EE;
+    -color-accent-secondary: #67E8F9;
+    -color-accent-subtle: #0E7490;
+
+    /* 语义 */
+    -color-semantic-success: #34D399;
+    -color-semantic-error: #F87171;
+    -color-semantic-warning: #FBBF24;
+    -color-semantic-info: #60A5FA;
+
+    /* 气泡 */
+    -color-bubble-user: #162A25;
+    -color-bubble-ai: #1A1E2E;
+    -color-tool-card: #1C2418;
+    -color-tool-card-border: #22D3EE;
+
+    /* 管线状态 */
+    -color-pipeline-active: #2563EB;
+    -color-pipeline-done: #059669;
+    -color-pipeline-pending: #475569;
+
+    /* 日志级别 */
+    -color-log-thinking: #A78BFA;
+    -color-log-action: #3B82F6;
+    -color-log-result: #10B981;
+    -color-log-error: #EF4444;
+    -color-log-debug: #6B7685;
+
+    /* UI 状态 */
+    -color-drop-zone: rgba(34, 211, 238, 0.15);
+    -color-tab-active: #22D3EE;
+
+    /* 兼容旧引用 */
+    -color-accent-gold: #22D3EE;
+    -color-accent-blue: #22D3EE;
+    -color-success: #34D399;
+    -color-error: #F87171;
+    -color-warning: #FBBF24;
 
     -fx-font-family: "Open Sans", "Microsoft YaHei", sans-serif;
     -fx-font-size: 14px;
@@ -49,7 +88,7 @@
     -fx-font-family: "Poppins", sans-serif;
     -fx-font-size: 20px;
     -fx-font-weight: 700;
-    -fx-text-fill: -color-accent-gold;
+    -fx-text-fill: -color-accent-primary;
 }
 
 .search-field {
@@ -62,7 +101,7 @@
     -fx-padding: 8 12;
 }
 
-.search-field:focused { -fx-border-color: -color-accent-blue; }
+.search-field:focused { -fx-border-color: -color-accent-primary; }
 
 .session-list {
     -fx-background-color: transparent;
@@ -83,7 +122,7 @@
 
 .session-list .list-cell:selected {
     -fx-background-color: -color-bg-card;
-    -fx-border-color: -color-accent-gold;
+    -fx-border-color: -color-accent-primary;
 }
 
 .session-title {
@@ -100,15 +139,15 @@
 }
 
 .btn-new-chat {
-    -fx-background-color: -color-accent-gold;
+    -fx-background-color: -color-accent-primary;
     -fx-background-radius: 8;
-    -fx-text-fill: #0A0E27;
+    -fx-text-fill: #121418;
     -fx-font-weight: 600;
     -fx-padding: 10 16;
     -fx-cursor: hand;
 }
 
-.btn-new-chat:hover { -fx-background-color: derive(#C8A97E, 15%); }
+.btn-new-chat:hover { -fx-background-color: -color-accent-secondary; }
 
 .btn-icon {
     -fx-background-color: transparent;
@@ -121,6 +160,20 @@
 .btn-icon:hover {
     -fx-background-color: -color-bg-card;
     -fx-text-fill: -color-text-primary;
+}
+
+.btn-attach {
+    -fx-background-color: transparent;
+    -fx-text-fill: -color-text-muted;
+    -fx-cursor: hand;
+    -fx-padding: 6;
+    -fx-background-radius: 6;
+    -fx-font-size: 16px;
+}
+
+.btn-attach:hover {
+    -fx-background-color: -color-bg-card;
+    -fx-text-fill: -color-accent-primary;
 }
 
 .chat-area { -fx-background-color: -color-bg-primary; }
@@ -181,13 +234,13 @@
 .message-sender {
     -fx-font-size: 13px;
     -fx-font-weight: 600;
-    -fx-text-fill: -color-accent-gold;
+    -fx-text-fill: -color-accent-primary;
 }
 
 .tool-card {
     -fx-background-color: -color-tool-card;
     -fx-background-radius: 8;
-    -fx-border-color: -color-accent-gold;
+    -fx-border-color: -color-tool-card-border;
     -fx-border-width: 2 0 0 0;
     -fx-border-radius: 8;
     -fx-padding: 12 16;
@@ -197,11 +250,11 @@
 .tool-card-header {
     -fx-font-size: 13px;
     -fx-font-weight: 600;
-    -fx-text-fill: -color-accent-gold;
+    -fx-text-fill: -color-accent-primary;
 }
 
 .tool-card-input {
-    -fx-background-color: -color-code-bg;
+    -fx-background-color: -color-bg-code;
     -fx-background-radius: 4;
     -fx-font-family: "JetBrains Mono", "Consolas", monospace;
     -fx-font-size: 12px;
@@ -214,8 +267,8 @@
     -fx-font-size: 13px;
 }
 
-.tool-card-status-success { -fx-text-fill: -color-success; }
-.tool-card-status-error { -fx-text-fill: -color-error; }
+.tool-card-status-success { -fx-text-fill: -color-semantic-success; }
+.tool-card-status-error { -fx-text-fill: -color-semantic-error; }
 
 .input-area {
     -fx-padding: 16 24;
@@ -261,15 +314,15 @@
 }
 
 .btn-send {
-    -fx-background-color: -color-accent-gold;
+    -fx-background-color: -color-accent-primary;
     -fx-background-radius: 8;
-    -fx-text-fill: #0A0E27;
+    -fx-text-fill: #121418;
     -fx-font-weight: 600;
     -fx-padding: 8 16;
     -fx-cursor: hand;
 }
 
-.btn-send:hover { -fx-background-color: derive(#C8A97E, 15%); }
+.btn-send:hover { -fx-background-color: -color-accent-secondary; }
 
 .btn-send:disabled {
     -fx-background-color: -color-border;
@@ -310,7 +363,7 @@
     -fx-padding: 8 12;
 }
 
-.dialog-input:focused { -fx-border-color: -color-accent-blue; }
+.dialog-input:focused { -fx-border-color: -color-accent-primary; }
 
 .empty-state { -fx-alignment: center; -fx-spacing: 12; }
 .empty-state-icon { -fx-font-size: 48px; -fx-text-fill: -color-text-muted; -fx-opacity: 0.4; }
@@ -323,3 +376,213 @@
 .scroll-bar .increment-button, .scroll-bar .decrement-button { -fx-background-color: transparent; -fx-padding: 0; }
 .scroll-bar:vertical { -fx-opacity: 0; }
 .scroll-bar:vertical:hover { -fx-opacity: 1; }
+
+/* === 管线进度条 === */
+.pipeline-progress {
+    -fx-padding: 12 24;
+    -fx-alignment: center;
+    -fx-spacing: 0;
+}
+
+.pipeline-stage {
+    -fx-alignment: center;
+    -fx-spacing: 4;
+}
+
+.pipeline-stage-indicator {
+    -fx-fill: -color-pipeline-pending;
+    -fx-stroke: transparent;
+    -fx-stroke-width: 2;
+}
+
+.pipeline-stage-active .pipeline-stage-indicator {
+    -fx-fill: -color-pipeline-active;
+}
+
+.pipeline-stage-done .pipeline-stage-indicator {
+    -fx-fill: -color-pipeline-done;
+}
+
+.pipeline-stage-error .pipeline-stage-indicator {
+    -fx-fill: -color-semantic-error;
+}
+
+.pipeline-stage-label {
+    -fx-font-size: 11px;
+    -fx-font-family: "Poppins", sans-serif;
+    -fx-text-fill: -color-text-muted;
+}
+
+.pipeline-stage-active .pipeline-stage-label {
+    -fx-text-fill: -color-pipeline-active;
+    -fx-font-weight: 600;
+}
+
+.pipeline-stage-done .pipeline-stage-label {
+    -fx-text-fill: -color-pipeline-done;
+}
+
+.pipeline-connector {
+    -fx-background-color: -color-pipeline-pending;
+    -fx-pref-height: 2;
+    -fx-pref-width: 24;
+    -fx-background-radius: 1;
+}
+
+.pipeline-connector-done {
+    -fx-background-color: -color-pipeline-done;
+}
+
+/* === Agent 日志卡片 === */
+.agent-log-card {
+    -fx-background-color: -color-bg-card;
+    -fx-background-radius: 8;
+    -fx-border-color: -color-border;
+    -fx-border-width: 1;
+    -fx-border-radius: 8;
+    -fx-padding: 12 16;
+    -fx-max-width: 680px;
+    -fx-spacing: 6;
+}
+
+.agent-log-header {
+    -fx-alignment: center-left;
+    -fx-spacing: 8;
+}
+
+.agent-log-name {
+    -fx-font-size: 13px;
+    -fx-font-weight: 600;
+    -fx-text-fill: -color-text-primary;
+}
+
+.agent-log-stage {
+    -fx-font-size: 11px;
+    -fx-text-fill: -color-text-muted;
+}
+
+.agent-log-duration {
+    -fx-font-size: 11px;
+    -fx-text-fill: -color-text-muted;
+}
+
+.agent-log-toggle {
+    -fx-background-color: transparent;
+    -fx-text-fill: -color-text-muted;
+    -fx-cursor: hand;
+    -fx-padding: 2 6;
+    -fx-background-radius: 4;
+    -fx-font-size: 12px;
+}
+
+.agent-log-toggle:hover {
+    -fx-background-color: -color-bg-elevated;
+}
+
+.agent-log-body {
+    -fx-spacing: 2;
+    -fx-padding: 4 0 0 20;
+}
+
+.log-line {
+    -fx-font-family: "JetBrains Mono", "Consolas", monospace;
+    -fx-font-size: 12px;
+    -fx-wrap-text: true;
+    -fx-max-width: 640px;
+}
+
+.log-thinking { -fx-text-fill: -color-log-thinking; -fx-font-style: italic; }
+.log-action { -fx-text-fill: -color-log-action; }
+.log-result { -fx-text-fill: -color-log-result; }
+.log-error { -fx-text-fill: -color-log-error; -fx-font-weight: bold; }
+.log-debug { -fx-text-fill: -color-log-debug; }
+
+/* === 文件预览面板 === */
+.file-preview-panel {
+    -fx-background-color: -color-bg-sidebar;
+    -fx-border-color: -color-border;
+    -fx-border-width: 1 0 0 0;
+}
+
+.preview-tab-bar {
+    -fx-padding: 8 12 0 12;
+    -fx-spacing: 2;
+    -fx-alignment: bottom-left;
+}
+
+.preview-tab {
+    -fx-background-color: transparent;
+    -fx-text-fill: -color-text-muted;
+    -fx-font-size: 12px;
+    -fx-padding: 6 12;
+    -fx-background-radius: 6 6 0 0;
+    -fx-cursor: hand;
+    -fx-border-color: transparent;
+    -fx-border-width: 0 0 2 0;
+}
+
+.preview-tab:hover {
+    -fx-background-color: -color-bg-card;
+    -fx-text-fill: -color-text-secondary;
+}
+
+.preview-tab-active {
+    -fx-text-fill: -color-text-primary;
+    -fx-background-color: -color-bg-card;
+    -fx-border-color: -color-tab-active;
+}
+
+.preview-content {
+    -fx-background-color: -color-bg-card;
+    -fx-padding: 0;
+}
+
+.preview-empty-state {
+    -fx-alignment: center;
+    -fx-spacing: 12;
+    -fx-padding: 48 24;
+}
+
+.preview-empty-icon {
+    -fx-font-size: 48px;
+    -fx-text-fill: -color-text-muted;
+    -fx-opacity: 0.3;
+}
+
+.preview-empty-text {
+    -fx-font-size: 14px;
+    -fx-text-fill: -color-text-muted;
+}
+
+.preview-empty-hint {
+    -fx-font-size: 12px;
+    -fx-text-fill: -color-text-muted;
+    -fx-opacity: 0.6;
+}
+
+/* === 拖放区域 === */
+.drop-zone-overlay {
+    -fx-background-color: -color-drop-zone;
+    -fx-border-color: -color-accent-primary;
+    -fx-border-width: 2;
+    -fx-border-style: dashed;
+    -fx-border-radius: 12;
+    -fx-alignment: center;
+    -fx-spacing: 8;
+}
+
+.drop-zone-icon {
+    -fx-font-size: 36px;
+    -fx-text-fill: -color-accent-primary;
+}
+
+.drop-zone-text {
+    -fx-font-size: 16px;
+    -fx-font-weight: 600;
+    -fx-text-fill: -color-accent-primary;
+}
+
+.drop-zone-hint {
+    -fx-font-size: 12px;
+    -fx-text-fill: -color-text-muted;
+}

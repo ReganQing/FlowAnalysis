@@ -27,7 +27,7 @@ public class ToolCallCard extends VBox {
         HBox.setHgrow(spacer, Priority.ALWAYS);
 
         Label duration = new Label(durationMs + "ms");
-        duration.setStyle("-fx-text-fill: #94A3B8; -fx-font-size: 11px;");
+        duration.setStyle("-fx-text-fill: #6B7685; -fx-font-size: 11px;");
 
         Label status = new Label(success ? "✅ 成功" : "❌ 失败");
         status.getStyleClass().add(success
@@ -36,14 +36,14 @@ public class ToolCallCard extends VBox {
         header.getChildren().addAll(name, spacer, duration, status);
 
         Label inputLabel = new Label("输入参数");
-        inputLabel.setStyle("-fx-font-size: 11px; -fx-text-fill: #94A3B8;");
+        inputLabel.setStyle("-fx-font-size: 11px; -fx-text-fill: #6B7685;");
         Label inputCode = new Label(toolInput);
         inputCode.getStyleClass().add("tool-card-input");
         inputCode.setWrapText(true);
         inputCode.setMaxWidth(Double.MAX_VALUE);
 
         Label resultLabel = new Label("返回结果");
-        resultLabel.setStyle("-fx-font-size: 11px; -fx-text-fill: #94A3B8;");
+        resultLabel.setStyle("-fx-font-size: 11px; -fx-text-fill: #6B7685;");
         Label resultText = new Label(result);
         resultText.getStyleClass().add("tool-card-result");
         resultText.setWrapText(true);

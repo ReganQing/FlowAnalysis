@@ -20,13 +20,13 @@ public class MarkdownTextFlow extends VBox {
     /** 不启用 TablesExtension — TextFlow 无法渲染表格，避免静默降级为纯文本 */
     private static final Parser PARSER = Parser.builder().build();
 
-    private static final String COLOR_TEXT = "#CBD5E1";
-    private static final String COLOR_HEADING = "#F1F5F9";
-    private static final String COLOR_CODE_BG = "#0D1117";
+    private static final String COLOR_TEXT = "#B0B8C4";
+    private static final String COLOR_HEADING = "#E8ECF1";
+    private static final String COLOR_CODE_BG = "#0D1017";
     private static final String COLOR_CODE_TEXT = "#E6EDF3";
-    private static final String COLOR_LINK = "#3B82F6";
-    private static final String COLOR_QUOTE = "#94A3B8";
-    private static final String COLOR_QUOTE_BORDER = "#C8A97E";
+    private static final String COLOR_LINK = "#22D3EE";
+    private static final String COLOR_QUOTE = "#6B7685";
+    private static final String COLOR_QUOTE_BORDER = "#0E7490";
     private static final String FONT_MONO = "'JetBrains Mono', 'Consolas', monospace";
     private static final String FONT_SANS = "'Open Sans', 'Microsoft YaHei', sans-serif";
     private static final String FONT_EMOJI = "'Segoe UI Emoji'";
@@ -123,7 +123,7 @@ public class MarkdownTextFlow extends VBox {
 
             if (!lang.isEmpty()) {
                 Label langLabel = new Label(lang);
-                langLabel.setStyle("-fx-text-fill: #6B7280; -fx-font-size: 11px;"
+                langLabel.setStyle("-fx-text-fill: #6B7685; -fx-font-size: 11px;"
                         + " -fx-font-family: " + FONT_SANS + "; -fx-padding: 0 0 2 0;");
                 getChildren().add(langLabel);
             }
@@ -205,7 +205,7 @@ public class MarkdownTextFlow extends VBox {
             flow.setStyle("-fx-border-color: " + COLOR_QUOTE_BORDER + ";"
                     + " -fx-border-width: 0 0 0 3;"
                     + " -fx-padding: 4 12;"
-                    + " -fx-background-color: rgba(200,169,126,0.04);");
+                    + " -fx-background-color: rgba(14,116,144,0.06);");
 
             addInlineChildren(blockQuote, flow,
                     "-fx-fill: " + COLOR_QUOTE + "; -fx-font-size: 14px;");
@@ -217,7 +217,7 @@ public class MarkdownTextFlow extends VBox {
             flushBlock();
 
             Label hr = new Label();
-            hr.setStyle("-fx-background-color: #334155;"
+            hr.setStyle("-fx-background-color: #2E3440;"
                     + " -fx-pref-height: 1; -fx-max-height: 1;"
                     + " -fx-margin: 8 0;");
             hr.setMaxWidth(Double.MAX_VALUE);
