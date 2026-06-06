@@ -6,11 +6,21 @@ import dev.langchain4j.model.openai.OpenAiStreamingChatModel;
 
 public class ChatModelCreator {
 
-    public static OpenAiChatModel newModel() {
+    private static final String BASE_URL = "https://dashscope.aliyuncs.com/compatible-mode/v1";
+
+    private static String requireApiKey() {
         String apiKey = System.getenv("DASHSCOPE_API_KEY");
+        if (apiKey == null || apiKey.isBlank()) {
+            throw new IllegalStateException(
+                "DASHSCOPE_API_KEY 环境变量未设置，请设置后重试");
+        }
+        return apiKey;
+    }
+
+    public static OpenAiChatModel newModel() {
         return OpenAiChatModel.builder()
-                .baseUrl("https://dashscope.aliyuncs.com/compatible-mode/v1")
-                .apiKey(apiKey)
+                .baseUrl(BASE_URL)
+                .apiKey(requireApiKey())
                 .modelName("qwen-max-latest")
                 .logRequests(true)
                 .logResponses(true)
@@ -18,29 +28,26 @@ public class ChatModelCreator {
     }
 
     public static OpenAiChatModel newModel(String modelName) {
-        String apiKey = System.getenv("DASHSCOPE_API_KEY");
         return OpenAiChatModel.builder()
-                .baseUrl("https://dashscope.aliyuncs.com/compatible-mode/v1")
-                .apiKey(apiKey)
-                .modelName("modelName")
+                .baseUrl(BASE_URL)
+                .apiKey(requireApiKey())
+                .modelName(modelName)
                 .build();
     }
 
     public static OpenAiChatModel newModel(String modelName, double temperature) {
-        String apiKey = System.getenv("DASHSCOPE_API_KEY");
         return OpenAiChatModel.builder()
-                .baseUrl("https://dashscope.aliyuncs.com/compatible-mode/v1")
-                .apiKey(apiKey)
+                .baseUrl(BASE_URL)
+                .apiKey(requireApiKey())
                 .modelName(modelName)
                 .temperature(temperature)
                 .build();
     }
 
     public static OpenAiChatModel newModel(String modelName, double temperature, int maxTokens) {
-        String apiKey = System.getenv("DASHSCOPE_API_KEY");
         return OpenAiChatModel.builder()
-                .baseUrl("https://dashscope.aliyuncs.com/compatible-mode/v1")
-                .apiKey(apiKey)
+                .baseUrl(BASE_URL)
+                .apiKey(requireApiKey())
                 .modelName(modelName)
                 .temperature(temperature)
                 .maxTokens(maxTokens)
@@ -48,11 +55,18 @@ public class ChatModelCreator {
     }
 
     public static StreamingChatModel newStreamingModel() {
-        String apiKey = System.getenv("DASHSCOPE_API_KEY");
         return OpenAiStreamingChatModel.builder()
-                .baseUrl("https://dashscope.aliyuncs.com/compatible-mode/v1")
-                .apiKey(apiKey)
+                .baseUrl(BASE_URL)
+                .apiKey(requireApiKey())
                 .modelName("qwen-max-latest")
+                .build();
+    }
+
+    public static StreamingChatModel newStreamingModel(String modelName) {
+        return OpenAiStreamingChatModel.builder()
+                .baseUrl(BASE_URL)
+                .apiKey(requireApiKey())
+                .modelName(modelName)
                 .build();
     }
 }
