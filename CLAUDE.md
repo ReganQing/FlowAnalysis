@@ -11,9 +11,13 @@ Java Maven learning/demo project for **LangChain4j (v1.4.0)** demonstrating AI c
 ## Build and Run
 
 ```bash
-mvn clean compile                                        # Compile
+mvn clean compile                                        # Compile everything
+mvn test                                                 # Run JUnit 5 tests
+mvn exec:java                                            # Launch desktop app (default mainClass)
 mvn exec:java -Dexec.mainClass="dataAnalysis.DataAnalysisDemo"  # Multi-agent pipeline
 ```
+
+**Important:** `exec-maven-plugin` is configured with `<classpathScope>test</classpathScope>`, so `src/test/java/` classes are on the classpath when running any main class. This is why demo classes in `src/test/java/` (without package declarations) can be run with just the class name.
 
 On Windows, set the env var in the same command:
 ```bash
@@ -33,24 +37,36 @@ mvn exec:java -Dexec.mainClass="SentimentClassification"   # Sentiment analysis
 
 ```bash
 mvn clean compile                                        # Compile
-mvn exec:java -Dexec.mainClass="desktop.app.DesktopApp"  # Launch desktop app
+mvn exec:java                                            # Launch desktop app (default mainClass)
 ```
 
-需要 `DASHSCOPE_API_KEY` 环境变量。数据库自动初始化在 `data/assistant.db`。
+需要 `DASHSCOPE_API_KEY` 环境变量。数据库自动初始化在 `data/assistant.db`，Schema 定义在 `src/main/resources/desktop/db/schema.sql`。
 
 ## Project Structure
 
 ```
 src/main/java/
 ├── model/                    # Shared infrastructure (ChatModelCreator, model configs)
-└── dataAnalysis/              # Core application — multi-agent data analysis pipeline
-    ├── chart/                 # Chart generation (JFreeChart)
-    ├── model/                 # Domain models (AnalysisPlan, Insight, ReportData, etc.)
-    ├── nodes/                 # 7 LangGraph4J pipeline nodes
-    ├── processing/            # Data profiling & token budget management
-    ├── report/               # HTML report generator
-    ├── router/               # Model routing (ModelRouter interface + implementations)
-    └── tools/                # @Tool-annotated methods for each node
+├── dataAnalysis/              # Multi-agent data analysis pipeline
+│   ├── chart/                 # Chart generation (JFreeChart)
+│   ├── model/                 # Domain models (AnalysisPlan, Insight, ReportData, etc.)
+│   ├── nodes/                 # 7 LangGraph4J pipeline nodes
+│   ├── processing/            # Data profiling & token budget management
+│   ├── report/               # HTML report generator
+│   ├── router/               # Model routing (ModelRouter interface + implementations)
+│   └── tools/                # @Tool-annotated methods for each node
+└── desktop/                   # JavaFX desktop chat application
+    ├── app/                   # Application entry point (DesktopApp)
+    ├── model/                 # Immutable domain records
+    ├── repository/            # DAO interfaces + SQLite implementations
+    ├── service/               # Business logic (Chat, Session, Analysis, FileUpload)
+    └── view/                  # FXML controllers + custom UI components
+
+src/main/resources/
+└── desktop/
+    ├── css/theme.css          # Dark theme stylesheet
+    ├── db/schema.sql          # SQLite table definitions
+    └── fxml/                  # JavaFX FXML layouts
 
 src/test/java/
 ├── (no package)               # Root-level learning demos
@@ -112,9 +128,69 @@ CSVParser → DataCleaner → AIPlanner → [DataAnalyzer|Insight|Chart] → Rep
 - **Tools use** Tablesaw (Pandas-like Java library), Apache Commons CSV, JFreeChart.
 - **Output** goes to `output/reports/` (HTML) and `output/charts/` (PNG).
 - **Input** is CSV sales data — `DataAnalysisDemo` auto-generates sample data if none provided.
-- **Model routing:** `ModelRouter` interface defined in `dataAnalysis/router/` (implementation deferred to next phase).
+- **Model routing:** `ModelRouter` interface + `IntelliModelRouter` implementation in `dataAnalysis/router/`.
+- **Progress reporting:** `ProgressListener` interface (6 callbacks: `onNodeStart`, `onNodeProgress`, `onNodeComplete`, `onNodeError`, `onPipelineComplete`, `onPipelineError`) allows UI consumers to track pipeline execution. Nodes are wrapped via `ProgressTrackingNodeAction` which times execution and emits events.
+- **Desktop integration:** `AnalysisService` runs `DataAnalysisGraph` on a daemon thread, wrapping all `ProgressListener` callbacks in `Platform.runLater()` for safe JavaFX UI updates.
 
 Key design decisions documented in `docs/plans/2026-06-05-data-analysis-upgrade-design.md`.
+
+### Desktop App — `src/main/java/desktop/`
+
+A JavaFX 21 desktop chat application with a layered architecture:
+
+```
+desktop/
+├── app/DesktopApp.java           # JavaFX Application entry point, wires controllers
+├── model/                        # Immutable domain records (ChatMessage, ChatSession, ModelConfig, MessageRole)
+├── repository/                   # DAO interfaces (SessionRepository, ChatRepository, SettingsRepository)
+│   └── impl/                     # SQLite implementations (SQLiteSessionRepository, etc.)
+├── service/                      # Business logic layer
+│   ├── ChatService               # Core chat: AI service, streaming, tool execution, file attachment
+│   ├── SessionService            # Session CRUD, auto-save, restore last session
+│   ├── TitleService              # AI-generated session titles
+│   ├── ModelService              # Model configuration management
+│   ├── AnalysisService           # Bridge: desktop → DataAnalysisGraph, manages background thread
+│   └── FileUploadService         # File validation, Excel→CSV conversion (Apache POI), 50MB limit
+└── view/                         # FXML controllers and custom UI components
+    ├── ChatViewController        # Main chat UI — messages, input, model selector, file attach
+    ├── SidebarController         # Session list, search, new chat, settings button
+    ├── SettingsController        # API key management, model configuration dialog
+    └── component/                # Reusable UI components
+        ├── MessageBubble         # Single chat message bubble
+        ├── MarkdownRenderer      # Full Markdown rendering via WebView (tables, code highlight)
+        ├── MarkdownTextFlow      # Lightweight TextFlow-based Markdown for streaming (no WebView)
+        ├── ToolCallCard          # Interactive tool execution visualization card
+        ├── AgentLogCard          # Pipeline node progress display
+        ├── PipelineProgressView  # 7-stage pipeline progress bar
+        ├── FilePreviewPanel      # Right-side file preview panel (CSV table, HTML, image)
+        ├── CsvPreviewView        # Tablesaw-powered CSV data table preview
+        ├── DropZoneOverlay       # Drag-and-drop file upload overlay
+        └── PreviewTabBar         # Tab bar for switching preview views
+```
+
+**Key patterns:**
+- **Immutability:** All model classes are Java `record` types.
+- **Repository pattern:** DAO interfaces in `repository/` with SQLite implementations in `repository/impl/`. `DatabaseManager` is a singleton managing the SQLite connection and schema initialization.
+- **FXML wiring:** `DesktopApp.start()` manually instantiates controllers and injects FXML-named components — no DI framework.
+- **Streaming:** `ChatService` uses `StreamingChatModel` + `StreamingCallback` to push tokens to `MarkdownTextFlow.updateMarkdown()`, with an 80ms throttle and `forceRender()` on completion.
+- **Two Markdown renderers:** `MarkdownTextFlow` (lightweight, for streaming) vs `MarkdownRenderer` (WebView-based, for final display with full GFM table support).
+- **AnalysisService bridge:** Wraps `DataAnalysisGraph.execute()` in a daemon thread, forwarding all `ProgressListener` callbacks to the JavaFX Application Thread via `Platform.runLater()`.
+- **File upload pipeline:** `FileUploadService` accepts .csv/.xls/.xlsx (max 50MB), auto-converts Excel to CSV via Apache POI, stores in `output/uploads/`.
+- **CSS theme:** Single theme file at `src/main/resources/desktop/css/theme.css` — dark theme with midnight blue (#0A0E27) base + gold (#D4A853) accents.
+- **Keyboard shortcuts:** Ctrl+N (new session), Ctrl+K (focus search).
+
+**Known JavaFX pitfall:** `TextFlow` with `Text("\n")` line breaks leaks the newline node's style to the next line's first glyph. The fix (in `MarkdownTextFlow.addInlineChildren`) uses zero-width space `​\n` and explicitly sets the same style on the break node. See memory `[[javafx-textflow-linebreak-style-bug]]`.
+
+## 📖 Documentation
+
+Comprehensive project documentation is available in the **Wiki**:
+
+- **[Wiki Home](docs/wiki/README.md)** — Documentation index and quick links
+- **[Architecture](docs/wiki/architecture.md)** — System architecture, technology stack, and design patterns
+- **[Data Analysis Pipeline](docs/wiki/data-analysis-pipeline.md)** — Multi-agent CSV analysis with LangGraph4J
+- **[Desktop Application](docs/wiki/desktop-app.md)** — JavaFX chat app documentation
+- **[API Reference](docs/wiki/api-reference.md)** — Core APIs and extension points
+- **[Development Guide](docs/wiki/development-guide.md)** — Setup, build, run, and contribution guidelines
 
 ## Key Dependencies
 
@@ -131,6 +207,13 @@ Key design decisions documented in `docs/plans/2026-06-05-data-analysis-upgrade-
 | `commons-csv` 1.11.0 | CSV parsing |
 | `jfreechart` 1.5.4 | Chart generation |
 | `flexmark-all` 0.64.0 | Markdown processing |
+| `commonmark` 0.22.0 | Markdown parsing (used by MarkdownTextFlow for streaming) |
+| `poi-ooxml` 5.2.5 | Excel .xls/.xlsx reading and conversion to CSV |
+| `javafx-controls/fxml/web` 21 | Desktop UI framework |
+| `sqlite-jdbc` 3.45.1.0 | Embedded database for chat sessions/messages |
+| `jackson-databind` 2.17.0 | JSON serialization |
+| `lombok` 1.18.38 | Boilerplate reduction (annotations only) |
+| JUnit 5 5.11.4 | Testing framework |
 
 ## Noteworthy Conventions
 
