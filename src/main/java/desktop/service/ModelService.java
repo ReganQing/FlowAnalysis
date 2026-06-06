@@ -15,7 +15,11 @@ public class ModelService {
     private final SettingsRepository settingsRepo;
 
     public ModelService() {
-        this.settingsRepo = new SQLiteSettingsRepository();
+        this(new SQLiteSettingsRepository());
+    }
+
+    ModelService(SettingsRepository settingsRepo) {
+        this.settingsRepo = settingsRepo;
     }
 
     public List<ModelConfig> getAvailableModels() {

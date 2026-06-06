@@ -7,6 +7,7 @@ import java.io.InputStreamReader;
 import java.nio.charset.StandardCharsets;
 import java.sql.Connection;
 import java.sql.DriverManager;
+import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.stream.Collectors;
 
@@ -41,8 +42,15 @@ public class DatabaseManager {
 
     public Connection getConnection() {
         try {
-            return DriverManager.getConnection(DB_URL);
-        } catch (Exception e) {
+            Connection connection = DriverManager.getConnection(DB_URL);
+            try (Statement statement = connection.createStatement()) {
+                statement.execute("PRAGMA foreign_keys = ON");
+            } catch (SQLException e) {
+                connection.close();
+                throw e;
+            }
+            return connection;
+        } catch (SQLException e) {
             throw new RuntimeException("获取数据库连接失败", e);
         }
     }

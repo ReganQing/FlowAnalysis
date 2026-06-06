@@ -26,6 +26,7 @@
         <javafx.version>21</javafx.version>
         <sqlite-jdbc.version>3.45.1.0</sqlite-jdbc.version>
         <commonmark.version>0.22.0</commonmark.version>
+        <junit.version>5.11.4</junit.version>
     </properties>
 
     <dependencyManagement>
@@ -218,6 +219,12 @@
             <groupId>org.commonmark</groupId>
             <artifactId>commonmark-ext-gfm-tables</artifactId>
             <version>${commonmark.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.junit.jupiter</groupId>
+            <artifactId>junit-jupiter</artifactId>
+            <version>${junit.version}</version>
+            <scope>test</scope>
         </dependency>
     </dependencies>
 
