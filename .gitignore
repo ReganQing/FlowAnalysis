@@ -36,9 +36,13 @@ build/
 .DS_Store
 
 ### Project ###
-docs/plans/
+docs/
 output/
 .claude/
 
 # SQLite 数据库
-data/logs/
+data/
+logs/
+sample_data/*
+
+AGENTS.md
