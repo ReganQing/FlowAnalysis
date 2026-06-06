@@ -26,6 +26,7 @@
         <javafx.version>21</javafx.version>
         <sqlite-jdbc.version>3.45.1.0</sqlite-jdbc.version>
         <commonmark.version>0.22.0</commonmark.version>
+        <poi.version>5.2.5</poi.version>
         <junit.version>5.11.4</junit.version>
     </properties>
 
@@ -207,6 +208,13 @@
             <groupId>org.xerial</groupId>
             <artifactId>sqlite-jdbc</artifactId>
             <version>${sqlite-jdbc.version}</version>
+        </dependency>
+
+        <!-- Apache POI (Excel .xls/.xlsx support) -->
+        <dependency>
+            <groupId>org.apache.poi</groupId>
+            <artifactId>poi-ooxml</artifactId>
+            <version>${poi.version}</version>
         </dependency>
 
         <!-- CommonMark (Markdown rendering) -->
