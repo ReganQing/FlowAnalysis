@@ -91,6 +91,13 @@ public class SidebarController implements Initializable {
         });
     }
 
+    public void selectSession(String sessionId) {
+        Platform.runLater(() -> sessions.stream()
+            .filter(session -> session.id().equals(sessionId))
+            .findFirst()
+            .ifPresent(session -> sessionList.getSelectionModel().select(session)));
+    }
+
     public void removeSession(String sessionId) {
         Platform.runLater(() -> {
             sessions.removeIf(s -> s.id().equals(sessionId));

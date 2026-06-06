@@ -8,7 +8,6 @@ import javafx.fxml.FXMLLoader;
 import javafx.scene.Parent;
 import javafx.scene.Scene;
 import javafx.scene.control.Alert;
-import javafx.scene.control.ButtonType;
 import javafx.scene.layout.BorderPane;
 import javafx.stage.Stage;
 
@@ -104,6 +103,7 @@ public class DesktopApp extends Application {
         sidebarController.setOnSettingsClicked(() -> {
             showSettingsDialog();
         });
+        chatController.setOnSessionTitleUpdated(sidebarController::refreshSession);
     }
 
     private void setupGlobalShortcuts(Scene scene) {
@@ -125,9 +125,14 @@ public class DesktopApp extends Application {
         sidebarController.loadSessions();
 
         SessionService sessionService = new SessionService();
-        if (sessionService.getAllSessions().isEmpty()) {
+        var sessions = sessionService.getAllSessions();
+        if (sessions.isEmpty()) {
             var session = chatController.createNewSession();
             sidebarController.addSession(session);
+        } else {
+            var latestSession = sessions.get(0);
+            chatController.switchToSession(latestSession.id());
+            sidebarController.selectSession(latestSession.id());
         }
     }
 
@@ -140,8 +145,9 @@ public class DesktopApp extends Application {
             FXMLLoader loader = new FXMLLoader(
                 getClass().getResource("/desktop/fxml/settings-dialog.fxml"));
             Parent settingsContent = loader.load();
+            desktop.view.SettingsController controller = loader.getController();
+            controller.setOnSaved(chatController::refreshCurrentModel);
             dialog.getDialogPane().setContent(settingsContent);
-            dialog.getDialogPane().getButtonTypes().addAll(ButtonType.CLOSE);
             dialog.showAndWait();
         } catch (IOException e) {
             showErrorAlert("错误", "无法加载设置面板: " + e.getMessage());
