@@ -16,6 +16,7 @@ import model.ChatModelCreator;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.function.Function;
 
 /**
  * 聊天核心服务 — 管理对话流、流式输出、工具调用。
@@ -23,9 +24,16 @@ import java.util.List;
 public class ChatService {
 
     private final ChatRepository chatRepo;
+    private final Function<String, StreamingChatModel> streamingModelFactory;
 
     public ChatService() {
-        this.chatRepo = new SQLiteChatRepository();
+        this(new SQLiteChatRepository(), ChatModelCreator::newStreamingModel);
+    }
+
+    ChatService(ChatRepository chatRepo,
+                Function<String, StreamingChatModel> streamingModelFactory) {
+        this.chatRepo = chatRepo;
+        this.streamingModelFactory = streamingModelFactory;
     }
 
     /**
@@ -75,30 +83,36 @@ public class ChatService {
      */
     public void sendMessage(String sessionId, String userContent,
                             String modelName, StreamingCallback callback) {
-        List<ChatMessage> history = loadHistory(sessionId);
-        List<dev.langchain4j.data.message.ChatMessage> lc4jMessages = buildLc4jMessages(history, userContent);
+        try {
+            List<ChatMessage> history = loadHistory(sessionId);
+            List<dev.langchain4j.data.message.ChatMessage> lc4jMessages =
+                buildLc4jMessages(history, userContent);
+            StreamingChatModel streamingModel = streamingModelFactory.apply(modelName);
+            StringBuilder fullResponse = new StringBuilder();
 
-        StreamingChatModel streamingModel = ChatModelCreator.newStreamingModel(modelName);
+            streamingModel.chat(lc4jMessages, new StreamingChatResponseHandler() {
+                @Override
+                public void onPartialResponse(String partialResponse) {
+                    fullResponse.append(partialResponse);
+                    callback.onToken(partialResponse);
+                }
 
-        StringBuilder fullResponse = new StringBuilder();
+                @Override
+                public void onCompleteResponse(ChatResponse response) {
+                    String completedText = fullResponse.isEmpty()
+                        ? response.aiMessage().text()
+                        : fullResponse.toString();
+                    callback.onComplete(completedText);
+                }
 
-        streamingModel.chat(lc4jMessages, new StreamingChatResponseHandler() {
-            @Override
-            public void onPartialResponse(String partialResponse) {
-                fullResponse.append(partialResponse);
-                callback.onToken(partialResponse);
-            }
-
-            @Override
-            public void onCompleteResponse(ChatResponse response) {
-                callback.onComplete(fullResponse.toString());
-            }
-
-            @Override
-            public void onError(Throwable error) {
-                callback.onError(error);
-            }
-        });
+                @Override
+                public void onError(Throwable error) {
+                    callback.onError(error);
+                }
+            });
+        } catch (Exception error) {
+            callback.onError(error);
+        }
     }
 
     /**
@@ -120,7 +134,12 @@ public class ChatService {
             }
         }
 
-        messages.add(UserMessage.from(currentUserContent));
+        boolean currentMessageAlreadySaved = !history.isEmpty()
+            && history.get(history.size() - 1).role() == MessageRole.USER
+            && history.get(history.size() - 1).content().equals(currentUserContent);
+        if (!currentMessageAlreadySaved) {
+            messages.add(UserMessage.from(currentUserContent));
+        }
 
         return messages;
     }
