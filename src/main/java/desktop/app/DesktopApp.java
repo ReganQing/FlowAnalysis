@@ -85,6 +85,10 @@ public class DesktopApp extends Application {
             mainLoader.getNamespace().get("chatInput");
         controller.btnSend = (javafx.scene.control.Button)
             mainLoader.getNamespace().get("btnSend");
+        controller.btnAttach = (javafx.scene.control.Button)
+            mainLoader.getNamespace().get("btnAttach");
+        controller.centerSplitPane = (javafx.scene.control.SplitPane)
+            mainLoader.getNamespace().get("centerSplitPane");
 
         controller.initialize(null, null);
         return controller;
