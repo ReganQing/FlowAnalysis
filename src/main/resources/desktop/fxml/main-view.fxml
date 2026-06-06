@@ -10,6 +10,7 @@
 <?import javafx.scene.control.Label?>
 <?import javafx.scene.control.TextField?>
 <?import javafx.scene.control.ListView?>
+<?import javafx.geometry.Insets?>
 
 <BorderPane styleClass="main-container" xmlns:fx="http://javafx.com/fxml">
     <left>
@@ -17,7 +18,10 @@
             <HBox styleClass="sidebar-header" alignment="CENTER_LEFT" spacing="8">
                 <Label styleClass="brand-title" text="✦ AI 助手"/>
             </HBox>
-            <HBox padding="0 16 8 16">
+            <HBox fx:id="searchBox">
+                <padding>
+                    <Insets right="16" bottom="8" left="16"/>
+                </padding>
                 <TextField styleClass="search-field" fx:id="searchField"
                            promptText="搜索会话..." HBox.hgrow="ALWAYS"/>
             </HBox>
