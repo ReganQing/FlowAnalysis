@@ -29,6 +29,7 @@ public class MarkdownTextFlow extends VBox {
     private static final String COLOR_QUOTE_BORDER = "#C8A97E";
     private static final String FONT_MONO = "'JetBrains Mono', 'Consolas', monospace";
     private static final String FONT_SANS = "'Open Sans', 'Microsoft YaHei', sans-serif";
+    private static final String FONT_EMOJI = "'Segoe UI Emoji'";
 
     /** 流式更新节流间隔（毫秒），避免每个 token 都重新解析渲染 */
     private static final long THROTTLE_INTERVAL_MS = 80;
@@ -225,12 +226,12 @@ public class MarkdownTextFlow extends VBox {
 
         @Override
         public void visit(HardLineBreak hardLineBreak) {
-            appendInline(new javafx.scene.text.Text("\n"), "");
+            flushBlock();
         }
 
         @Override
         public void visit(SoftLineBreak softLineBreak) {
-            appendInline(new javafx.scene.text.Text("\n"), "");
+            flushBlock();
         }
 
         @Override
@@ -248,8 +249,7 @@ public class MarkdownTextFlow extends VBox {
 
         @Override
         public void visit(org.commonmark.node.Text text) {
-            appendInline(new javafx.scene.text.Text(text.getLiteral()),
-                    "-fx-fill: " + COLOR_TEXT + ";");
+            appendStyledText(text.getLiteral(), "-fx-fill: " + COLOR_TEXT + ";");
         }
 
         @Override
@@ -301,8 +301,14 @@ public class MarkdownTextFlow extends VBox {
         }
 
         private void appendInlineText(Node source, String style) {
-            javafx.scene.text.Text text = new javafx.scene.text.Text(extractText(source));
-            appendInline(text, style);
+            appendStyledText(extractText(source), style);
+        }
+
+        private void appendStyledText(String value, String style) {
+            if (currentBlock == null) {
+                currentBlock = createParagraphFlow();
+            }
+            addStyledText(currentBlock, value, style);
         }
 
         /**
@@ -314,17 +320,13 @@ public class MarkdownTextFlow extends VBox {
             for (Node child = parent.getFirstChild();
                  child != null; child = child.getNext()) {
                 if (child instanceof org.commonmark.node.Text textNode) {
-                    javafx.scene.text.Text t = new javafx.scene.text.Text(textNode.getLiteral());
-                    t.setStyle(baseStyle);
-                    target.getChildren().add(t);
+                    addStyledText(target, textNode.getLiteral(), baseStyle);
                 } else if (child instanceof StrongEmphasis strong) {
-                    javafx.scene.text.Text t = new javafx.scene.text.Text(extractText(strong));
-                    t.setStyle(baseStyle + " -fx-font-weight: bold;");
-                    target.getChildren().add(t);
+                    addStyledText(target, extractText(strong),
+                            baseStyle + " -fx-font-weight: bold;");
                 } else if (child instanceof Emphasis em) {
-                    javafx.scene.text.Text t = new javafx.scene.text.Text(extractText(em));
-                    t.setStyle(baseStyle + " -fx-font-style: italic;");
-                    target.getChildren().add(t);
+                    addStyledText(target, extractText(em),
+                            baseStyle + " -fx-font-style: italic;");
                 } else if (child instanceof Code code) {
                     javafx.scene.text.Text t = new javafx.scene.text.Text(code.getLiteral());
                     t.setStyle("-fx-font-family: " + FONT_MONO + ";"
@@ -332,9 +334,8 @@ public class MarkdownTextFlow extends VBox {
                             + " -fx-font-size: 13px;");
                     target.getChildren().add(t);
                 } else if (child instanceof Link link) {
-                    javafx.scene.text.Text t = new javafx.scene.text.Text(extractText(link));
-                    t.setStyle("-fx-fill: " + COLOR_LINK + "; -fx-underline: true;");
-                    target.getChildren().add(t);
+                    addStyledText(target, extractText(link),
+                            "-fx-fill: " + COLOR_LINK + "; -fx-underline: true;");
                 } else if (child instanceof Image image) {
                     String alt = extractText(image);
                     javafx.scene.text.Text t = new javafx.scene.text.Text(
@@ -343,7 +344,11 @@ public class MarkdownTextFlow extends VBox {
                     target.getChildren().add(t);
                 } else if (child instanceof SoftLineBreak
                         || child instanceof HardLineBreak) {
-                    target.getChildren().add(new javafx.scene.text.Text("\n"));
+                    // Containers such as list items cannot split into sibling TextFlows.
+                    // A zero-width break avoids JavaFX styling the next glyph as the newline.
+                    javafx.scene.text.Text breakNode = new javafx.scene.text.Text("\u200B\n");
+                    breakNode.setStyle(baseStyle);
+                    target.getChildren().add(breakNode);
                 } else {
                     addInlineChildren(child, target, baseStyle);
                 }
@@ -370,5 +375,43 @@ public class MarkdownTextFlow extends VBox {
         TextFlow flow = new TextFlow();
         flow.setStyle("-fx-padding: 0;");
         return flow;
+    }
+
+    private static void addStyledText(TextFlow target, String value, String baseStyle) {
+        if (value == null || value.isEmpty()) {
+            return;
+        }
+
+        StringBuilder run = new StringBuilder();
+        Boolean emojiRun = null;
+        for (int offset = 0; offset < value.length();) {
+            int codePoint = value.codePointAt(offset);
+            boolean emoji = isEmojiCodePoint(codePoint)
+                || ((codePoint == 0xFE0F || codePoint == 0x200D) && Boolean.TRUE.equals(emojiRun));
+
+            if (emojiRun != null && emojiRun != emoji) {
+                addTextRun(target, run.toString(), baseStyle, emojiRun);
+                run.setLength(0);
+            }
+            run.appendCodePoint(codePoint);
+            emojiRun = emoji;
+            offset += Character.charCount(codePoint);
+        }
+        addTextRun(target, run.toString(), baseStyle, Boolean.TRUE.equals(emojiRun));
+    }
+
+    private static void addTextRun(TextFlow target, String value,
+                                   String baseStyle, boolean emoji) {
+        if (value.isEmpty()) return;
+        javafx.scene.text.Text text = new javafx.scene.text.Text(value);
+        text.setStyle(baseStyle + (emoji ? " -fx-font-family: " + FONT_EMOJI + ";" : ""));
+        target.getChildren().add(text);
+    }
+
+    private static boolean isEmojiCodePoint(int codePoint) {
+        return (codePoint >= 0x1F000 && codePoint <= 0x1FAFF)
+            || (codePoint >= 0x2600 && codePoint <= 0x27BF)
+            || (codePoint >= 0x2300 && codePoint <= 0x23FF)
+            || (codePoint >= 0x2B00 && codePoint <= 0x2BFF);
     }
 }
