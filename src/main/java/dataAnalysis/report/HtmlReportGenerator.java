@@ -99,7 +99,7 @@ public final class HtmlReportGenerator {
                 --text-primary: #1A1A1A;
                 --text-secondary: #6B6B6B;
                 --divider: #E0E0E0;
-                --accent: #C8A97E;
+                --accent: #22D3EE;
                 --critical: #B85450;
                 --warning: #C89B3C;
                 --info: #5A7A9A;

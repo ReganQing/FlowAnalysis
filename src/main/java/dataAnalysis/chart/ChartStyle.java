@@ -22,31 +22,31 @@ import java.awt.*;
  */
 public final class ChartStyle {
 
-    // ---- 配色方案：低饱和、高级灰度 + 暖金点缀 ----
+    // ---- 配色方案：石墨霜 Graphite Frost — 冷灰 + 冷青点缀 ----
     public static final Color[] PALETTE = {
         new Color(74, 74, 74),     // 深灰 CHART_1
-        new Color(200, 169, 126),  // 暖金 CHART_2 (唯一强调色)
+        new Color(34, 211, 238),   // 冷青 CHART_2 (石墨霜强调色)
         new Color(122, 154, 122),  // 灰绿 CHART_3
-        new Color(138, 122, 106),  // 暖褐 CHART_4
-        new Color(106, 122, 138),  // 灰蓝 CHART_5
-        new Color(154, 138, 122),  // 浅褐 CHART_6
+        new Color(96, 165, 250),   // 冷蓝 CHART_4
+        new Color(167, 139, 250),  // 冷紫 CHART_5
+        new Color(52, 211, 153),   // 冷绿 CHART_6
         new Color(90, 90, 90),     // 深灰2 CHART_7
-        new Color(170, 155, 140),  // 浅金 CHART_8
+        new Color(103, 232, 249),  // 浅青 CHART_8
     };
 
     // ---- 洞察等级色 ----
-    public static final Color CRITICAL_COLOR = new Color(184, 84, 80);    // 深砖红
-    public static final Color WARNING_COLOR  = new Color(200, 155, 60);    // 暗金
-    public static final Color INFO_COLOR     = new Color(90, 122, 154);    // 灰蓝
-    public static final Color POSITIVE_COLOR = new Color(90, 138, 106);   // 灰绿
+    public static final Color CRITICAL_COLOR = new Color(248, 113, 113);   // 冷红
+    public static final Color WARNING_COLOR  = new Color(251, 191, 36);    // 冷金
+    public static final Color INFO_COLOR     = new Color(96, 165, 250);    // 冷蓝
+    public static final Color POSITIVE_COLOR = new Color(52, 211, 153);    // 冷绿
 
     // ---- 基础色 ----
     public static final Color BG_WHITE        = new Color(255, 255, 255);
     public static final Color TRANSPARENT     = new Color(0, 0, 0, 0);
     public static final Color TEXT_PRIMARY    = new Color(26, 26, 26);
-    public static final Color TEXT_SECONDARY  = new Color(107, 107, 107);
-    public static final Color DIVIDER         = new Color(224, 224, 224);
-    public static final Color ACCENT          = new Color(200, 169, 126);    // 暖金
+    public static final Color TEXT_SECONDARY  = new Color(107, 118, 133);
+    public static final Color DIVIDER         = new Color(46, 52, 64);
+    public static final Color ACCENT          = new Color(34, 211, 238);    // 冷青
 
     // ---- 字体 ----
     public static final Font TITLE_FONT  = new Font("Microsoft YaHei", Font.BOLD, 16);
