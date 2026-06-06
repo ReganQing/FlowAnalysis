@@ -2,9 +2,8 @@ package dataAnalysis;
 
 import dataAnalysis.nodes.*;
 import dataAnalysis.model.AnalysisPlan;
+import dataAnalysis.router.IntelliModelRouter;
 import dataAnalysis.router.ModelRouter;
-import dataAnalysis.router.DefaultModelRouter;
-import model.ChatModelCreator;
 import org.bsc.langgraph4j.CompiledGraph;
 import org.bsc.langgraph4j.StateGraph;
 import org.bsc.langgraph4j.action.AsyncCommandAction;
@@ -25,7 +24,7 @@ public class DataAnalysisGraph {
     private final ModelRouter modelRouter;
 
     public DataAnalysisGraph() {
-        this(new DefaultModelRouter(ChatModelCreator.newModel()));
+        this(new IntelliModelRouter());
     }
 
     public DataAnalysisGraph(ModelRouter modelRouter) {
@@ -37,10 +36,10 @@ public class DataAnalysisGraph {
             .addNode("parser",   node_async(new CSVParserNode()))
             .addNode("cleaner",  node_async(new DataCleanerNode()))
             .addNode("planner",  node_async(new AIPlannerNode(modelRouter)))
-            .addNode("analyzer", node_async(new DataAnalyzerNode()))
+            .addNode("analyzer", node_async(new DataAnalyzerNode(modelRouter)))
             .addNode("insight",  node_async(new InsightNode(modelRouter)))
             .addNode("chart",    node_async(new ChartGeneratorNode()))
-            .addNode("report",   node_async(new ReportGeneratorNode()))
+            .addNode("report",   node_async(new ReportGeneratorNode(modelRouter)))
             .addEdge(START,      "parser")
             .addEdge("parser",   "cleaner")
             .addEdge("cleaner",  "planner")

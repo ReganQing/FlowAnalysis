@@ -63,6 +63,9 @@ public final class HtmlReportGenerator {
         // KPI 概览卡片
         appendKpiSection(sb, data.profile());
 
+        // AI 执行摘要
+        appendExecutiveSummary(sb, data);
+
         // AI 洞察
         appendInsightsSection(sb, data.insights());
 
@@ -160,6 +163,19 @@ public final class HtmlReportGenerator {
                 gap: 16px;
                 margin-bottom: 48px;
               }
+
+              /* --- 执行摘要 --- */
+              .executive-summary {
+                background: var(--bg-card);
+                padding: 24px;
+                border-left: 3px solid var(--accent);
+                border-bottom: 1px solid var(--divider);
+                font-size: 15px;
+                line-height: 1.9;
+                color: var(--text-primary);
+                margin-bottom: 48px;
+              }
+
               .kpi-card {
                 background: var(--bg-card);
                 padding: 24px;
@@ -316,6 +332,18 @@ public final class HtmlReportGenerator {
         sb.append("</div>\n");
     }
 
+    // ========== 执行摘要 ==========
+
+    private static void appendExecutiveSummary(StringBuilder sb, ReportData data) {
+        String summary = data.executiveSummary();
+        if (summary == null || summary.isBlank()) return;
+
+        sb.append("<h2 class=\"section-title\">执行摘要</h2>\n");
+        sb.append("<div class=\"executive-summary\">\n");
+        sb.append(escapeHtml(summary));
+        sb.append("\n</div>\n");
+    }
+
     private static void appendKpiCard(StringBuilder sb, String value, String label) {
         sb.append("  <div class=\"kpi-card\">\n");
         sb.append(String.format("    <div class=\"value\">%s</div>\n", escapeHtml(value)));
@@ -377,8 +405,8 @@ public final class HtmlReportGenerator {
             sb.append("<div class=\"analysis-section\">\n");
             sb.append(String.format("  <h3>%d. %s</h3>\n", i + 1, escapeHtml(section.title())));
 
-            if (section.content() != null && !section.content().isBlank()) {
-                sb.append("  <div class=\"content\">").append(escapeHtml(section.content())).append("</div>\n");
+            if (section.displayContent() != null && !section.displayContent().isBlank()) {
+                sb.append("  <div class=\"content\">").append(escapeHtml(section.displayContent())).append("</div>\n");
             }
 
             // 按序号关联图表

@@ -154,7 +154,8 @@ public class ReportDemo {
             sections,
             recommendations,
             "2026-06-06 00:30:00",
-            "sample_data/sales_data_sample.csv"
+            "sample_data/sales_data_sample.csv",
+            null  // executiveSummary，ReportDemo 不使用 AI 生成
         );
 
         String reportPath = dataAnalysis.report.HtmlReportGenerator.generate(reportData);
