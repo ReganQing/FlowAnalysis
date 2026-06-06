@@ -3,9 +3,12 @@ package desktop.service;
 import org.apache.poi.ss.usermodel.*;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 import org.apache.poi.hssf.usermodel.HSSFWorkbook;
+import org.apache.commons.csv.CSVFormat;
+import org.apache.commons.csv.CSVPrinter;
 
 import java.io.*;
 import java.nio.file.*;
+import java.nio.charset.StandardCharsets;
 import java.util.Set;
 
 /**
@@ -19,7 +22,15 @@ public class FileUploadService {
 
     private static final long MAX_FILE_SIZE = 50 * 1024 * 1024; // 50MB
     private static final Set<String> SUPPORTED_EXTENSIONS = Set.of(".csv", ".xls", ".xlsx");
-    private static final Path UPLOAD_DIR = Path.of("output", "uploads");
+    private final Path uploadDir;
+
+    public FileUploadService() {
+        this(Path.of("output", "uploads"));
+    }
+
+    FileUploadService(Path uploadDir) {
+        this.uploadDir = uploadDir;
+    }
 
     /**
      * 验证并存储上传的文件。
@@ -53,7 +64,7 @@ public class FileUploadService {
         }
 
         // 确保上传目录存在
-        Files.createDirectories(UPLOAD_DIR);
+        Files.createDirectories(uploadDir);
 
         // 生成唯一文件名
         long timestamp = System.currentTimeMillis();
@@ -61,14 +72,14 @@ public class FileUploadService {
         // Excel 文件需要转换为 CSV
         if (extension.equals(".xls") || extension.equals(".xlsx")) {
             String csvName = timestamp + "_" + getBaseName(fileName) + ".csv";
-            Path csvPath = UPLOAD_DIR.resolve(csvName);
+            Path csvPath = uploadDir.resolve(csvName);
             convertExcelToCsv(sourcePath, csvPath, extension);
             return csvPath;
         }
 
         // CSV 直接复制
         String uniqueName = timestamp + "_" + fileName;
-        Path targetPath = UPLOAD_DIR.resolve(uniqueName);
+        Path targetPath = uploadDir.resolve(uniqueName);
         Files.copy(sourcePath, targetPath, StandardCopyOption.REPLACE_EXISTING);
         return targetPath;
     }
@@ -89,48 +100,33 @@ public class FileUploadService {
              Workbook workbook = extension.equals(".xlsx")
                  ? new XSSFWorkbook(is)
                  : new HSSFWorkbook(is);
-             PrintWriter writer = new PrintWriter(Files.newBufferedWriter(csvPath))) {
+             Writer writer = Files.newBufferedWriter(csvPath, StandardCharsets.UTF_8);
+             CSVPrinter printer = new CSVPrinter(writer, CSVFormat.DEFAULT)) {
 
             // 只转换第一个工作表
             Sheet sheet = workbook.getSheetAt(0);
+            DataFormatter formatter = new DataFormatter();
+            FormulaEvaluator evaluator = workbook.getCreationHelper().createFormulaEvaluator();
+            int columnCount = findColumnCount(sheet);
 
-            for (Row row : sheet) {
-                StringBuilder line = new StringBuilder();
-                boolean first = true;
-                for (Cell cell : row) {
-                    if (!first) line.append(",");
-                    first = false;
-                    line.append(escapeCsvCell(cell));
+            for (int rowIndex = sheet.getFirstRowNum(); rowIndex <= sheet.getLastRowNum(); rowIndex++) {
+                Row row = sheet.getRow(rowIndex);
+                java.util.List<String> values = new java.util.ArrayList<>(columnCount);
+                for (int columnIndex = 0; columnIndex < columnCount; columnIndex++) {
+                    Cell cell = row == null ? null : row.getCell(columnIndex, Row.MissingCellPolicy.RETURN_BLANK_AS_NULL);
+                    values.add(cell == null ? "" : formatter.formatCellValue(cell, evaluator));
                 }
-                writer.println(line);
+                printer.printRecord(values);
             }
         }
     }
 
-    /** 从 Cell 提取值并转义 CSV 特殊字符。 */
-    private static String escapeCsvCell(Cell cell) {
-        String value = switch (cell.getCellType()) {
-            case STRING  -> cell.getStringCellValue();
-            case NUMERIC -> {
-                double num = cell.getNumericCellValue();
-                // 如果是整数，不显示小数点
-                yield num == Math.floor(num) && !Double.isInfinite(num)
-                    ? String.valueOf((long) num)
-                    : String.valueOf(num);
-            }
-            case BOOLEAN -> String.valueOf(cell.getBooleanCellValue());
-            case FORMULA -> {
-                try { yield cell.getStringCellValue(); }
-                catch (Exception e) { yield String.valueOf(cell.getNumericCellValue()); }
-            }
-            default -> "";
-        };
-
-        // CSV 转义：包含逗号/引号/换行时用双引号包裹
-        if (value.contains(",") || value.contains("\"") || value.contains("\n")) {
-            return "\"" + value.replace("\"", "\"\"") + "\"";
+    private static int findColumnCount(Sheet sheet) {
+        int columnCount = 0;
+        for (Row row : sheet) {
+            columnCount = Math.max(columnCount, row.getLastCellNum());
         }
-        return value;
+        return columnCount;
     }
 
     private static String getExtension(String fileName) {

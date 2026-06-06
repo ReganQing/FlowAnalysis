@@ -10,4 +10,4 @@ public record Insight(
     String evidence,
     String explanation,
     String recommendation
-) {}
+) implements java.io.Serializable {}

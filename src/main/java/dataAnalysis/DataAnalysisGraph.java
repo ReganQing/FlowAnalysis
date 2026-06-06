@@ -8,6 +8,7 @@ import org.bsc.langgraph4j.CompiledGraph;
 import org.bsc.langgraph4j.StateGraph;
 import org.bsc.langgraph4j.action.AsyncCommandAction;
 import org.bsc.langgraph4j.action.AsyncEdgeAction;
+import org.bsc.langgraph4j.action.NodeAction;
 
 import java.util.List;
 import java.util.Map;
@@ -33,25 +34,39 @@ public class DataAnalysisGraph {
     }
 
     public CompiledGraph<AnalysisState> buildGraph() throws Exception {
+        return buildGraph(null);
+    }
+
+    private CompiledGraph<AnalysisState> buildGraph(ProgressListener listener) throws Exception {
         return new StateGraph<>(AnalysisState.SCHEMA, AnalysisState::new)
-            .addNode("parser",   node_async(new CSVParserNode()))
-            .addNode("cleaner",  node_async(new DataCleanerNode()))
-            .addNode("planner",  node_async(new AIPlannerNode(modelRouter)))
-            .addNode("analyzer", node_async(new DataAnalyzerNode(modelRouter)))
-            .addNode("insight",  node_async(new InsightNode(modelRouter)))
-            .addNode("chart",    node_async(new ChartGeneratorNode()))
-            .addNode("report",   node_async(new ReportGeneratorNode(modelRouter)))
+            .addNode("parser",   tracked("parser", new CSVParserNode(), listener))
+            .addNode("cleaner",  tracked("cleaner", new DataCleanerNode(), listener))
+            .addNode("planner",  tracked("planner", new AIPlannerNode(modelRouter), listener))
+            .addNode("analyzer", tracked("analyzer", new DataAnalyzerNode(modelRouter), listener))
+            .addNode("insight",  tracked("insight", new InsightNode(modelRouter), listener))
+            .addNode("chart",    tracked("chart", new ChartGeneratorNode(), listener))
+            .addNode("report",   tracked("report", new ReportGeneratorNode(modelRouter), listener))
             .addEdge(START,      "parser")
             .addEdge("parser",   "cleaner")
             .addEdge("cleaner",  "planner")
             .addConditionalEdges("planner",
                     AsyncCommandAction.of(AsyncEdgeAction.edge_async(this::routeAnalysis)),
                     Map.of("analyzer", "analyzer", "insight", "insight", "chart", "chart"))
-            .addEdge("analyzer", "chart")
-            .addEdge("insight",  "chart")
+            .addConditionalEdges("analyzer",
+                    AsyncCommandAction.of(AsyncEdgeAction.edge_async(this::routeAnalysis)),
+                    Map.of("analyzer", "analyzer", "insight", "insight", "chart", "chart"))
+            .addConditionalEdges("insight",
+                    AsyncCommandAction.of(AsyncEdgeAction.edge_async(this::routeAnalysis)),
+                    Map.of("analyzer", "analyzer", "insight", "insight", "chart", "chart"))
             .addEdge("chart",    "report")
             .addEdge("report",   END)
             .compile();
+    }
+
+    private static org.bsc.langgraph4j.action.AsyncNodeAction<AnalysisState> tracked(
+            String nodeName, NodeAction<AnalysisState> action, ProgressListener listener) {
+        return node_async(ProgressTrackingNodeAction.wrap(
+            nodeName, STAGE_INDEX.get(nodeName), action, listener));
     }
 
     private String routeAnalysis(AnalysisState state) {
@@ -68,9 +83,9 @@ public class DataAnalysisGraph {
         "cleaner",  2,
         "planner",  3,
         "analyzer", 4,
-        "insight",  4,
-        "chart",    5,
-        "report",   6
+        "insight",  5,
+        "chart",    6,
+        "report",   7
     );
 
     /**
@@ -84,7 +99,7 @@ public class DataAnalysisGraph {
      * 执行数据分析管线，通过 {@link ProgressListener} 报告进度。
      */
     public AnalysisResult execute(String csvPath, ProgressListener listener) throws Exception {
-        CompiledGraph<AnalysisState> graph = buildGraph();
+        CompiledGraph<AnalysisState> graph = buildGraph(listener);
 
         log(listener, "========================================");
         log(listener, "数据分析多智能体系统");
@@ -92,32 +107,12 @@ public class DataAnalysisGraph {
         log(listener, "========================================\n");
 
         AnalysisState finalState = null;
-        Map<String, Long> startTimes = new java.util.HashMap<>();
-
         for (var nodeOutput : graph.stream(Map.of(
                 AnalysisState.CSV_PATH_KEY, csvPath,
                 AnalysisState.CURRENT_STEP_KEY, "START"
         ))) {
             String nodeName = nodeOutput.node();
             finalState = nodeOutput.state();
-
-            // 记录节点开始时间
-            long now = System.currentTimeMillis();
-            startTimes.put(nodeName, now);
-
-            // 通知节点开始
-            int stage = STAGE_INDEX.getOrDefault(nodeName, 0);
-            if (listener != null) {
-                listener.onNodeStart(nodeName, stage);
-            }
-
-            log(listener, "[执行] 节点: " + nodeName);
-
-            // 通知节点完成
-            long duration = System.currentTimeMillis() - now;
-            if (listener != null) {
-                listener.onNodeComplete(nodeName, duration);
-            }
 
             System.out.println("[完成] 节点: " + nodeName);
         }
@@ -130,7 +125,31 @@ public class DataAnalysisGraph {
             throw new RuntimeException(error);
         }
 
-        AnalysisResult result = new AnalysisResult(
+        AnalysisResult result;
+        try {
+            result = createResult(csvPath, finalState);
+        } catch (IllegalStateException e) {
+            if (listener != null) {
+                listener.onPipelineError(e.getMessage());
+            }
+            throw e;
+        }
+
+        if (listener != null) {
+            listener.onPipelineComplete(result);
+        }
+
+        return result;
+    }
+
+    static AnalysisResult createResult(String csvPath, AnalysisState finalState) {
+        if (finalState.reportPath().isBlank()) {
+            String details = finalState.errors().isEmpty()
+                ? "未生成报告文件"
+                : String.join("; ", finalState.errors());
+            throw new IllegalStateException("数据分析管线失败: " + details);
+        }
+        return new AnalysisResult(
             csvPath,
             finalState.reportPath(),
             finalState.chartEmbeds().stream().map(c -> c.title()).toList(),
@@ -138,12 +157,6 @@ public class DataAnalysisGraph {
             finalState.errors(),
             collectOutputFiles(finalState)
         );
-
-        if (listener != null) {
-            listener.onPipelineComplete(result);
-        }
-
-        return result;
     }
 
     private void log(ProgressListener listener, String message) {
@@ -155,14 +168,13 @@ public class DataAnalysisGraph {
     /** 收集管线生成的所有输出文件路径（报告 + 图表）。 */
     private static List<String> collectOutputFiles(AnalysisState state) {
         java.util.List<String> files = new java.util.ArrayList<>();
-        if (state.reportPath() != null) {
+        if (!state.reportPath().isBlank()) {
             files.add(state.reportPath());
         }
-        // 图表文件保存在 output/charts/ 目录，通过 embed 标题推断路径
-        state.chartEmbeds().forEach(embed -> {
-            // ChartEmbed 包含 base64 图片，但图表也保存为 PNG
-            // 图表路径在 ChartGeneratorNode 中生成
-        });
+        state.chartEmbeds().stream()
+            .map(dataAnalysis.model.ChartEmbed::outputPath)
+            .filter(path -> path != null && !path.isBlank())
+            .forEach(files::add);
         return files;
     }
 

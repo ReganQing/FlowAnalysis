@@ -19,7 +19,7 @@ import javafx.util.Duration;
  */
 public class PipelineProgressView extends HBox {
 
-    public enum StageStatus { PENDING, ACTIVE, COMPLETED, ERROR }
+    public enum StageStatus { PENDING, ACTIVE, COMPLETED, SKIPPED, ERROR }
 
     private static final String[] STAGE_NAMES = {"Parse", "Clean", "Plan", "Analyze", "Insight", "Chart", "Report"};
     private static final String[] STAGE_LABELS = {"解析", "清洗", "规划", "分析", "洞察", "图表", "报告"};
@@ -27,6 +27,7 @@ public class PipelineProgressView extends HBox {
     private static final String COLOR_PENDING = "#475569";
     private static final String COLOR_ACTIVE  = "#2563EB";
     private static final String COLOR_DONE    = "#059669";
+    private static final String COLOR_SKIPPED = "#64748B";
     private static final String COLOR_ERROR   = "#EF4444";
 
     private final StageView[] stages = new StageView[7];
@@ -62,11 +63,6 @@ public class PipelineProgressView extends HBox {
         }
 
         stages[index].setStatus(status);
-
-        // 更新已通过的阶段和连接线颜色
-        for (int i = 0; i < index; i++) {
-            stages[i].setStatus(StageStatus.COMPLETED);
-        }
 
         // 更新连接线颜色
         int connectorIndex = 0;
@@ -115,10 +111,37 @@ public class PipelineProgressView extends HBox {
     /** 获取阶段总数。 */
     public int getStageCount() { return 7; }
 
+    public int indexOfNode(String nodeName) {
+        return switch (nodeName) {
+            case "parser" -> 0;
+            case "cleaner" -> 1;
+            case "planner" -> 2;
+            case "analyzer" -> 3;
+            case "insight" -> 4;
+            case "chart" -> 5;
+            case "report" -> 6;
+            default -> -1;
+        };
+    }
+
+    public void finish() {
+        if (activeAnimation != null) {
+            activeAnimation.stop();
+            activeAnimation = null;
+        }
+        for (StageView stage : stages) {
+            if (stage.status == StageStatus.PENDING || stage.status == StageStatus.ACTIVE) {
+                stage.setStatus(StageStatus.SKIPPED);
+            }
+        }
+        stages[6].setStatus(StageStatus.COMPLETED);
+    }
+
     // ── 内部阶段视图 ──────────────────────────────────────────
 
     private static class StageView extends VBox {
         final Circle indicator;
+        StageStatus status = StageStatus.PENDING;
 
         StageView(String label) {
             setAlignment(Pos.CENTER);
@@ -135,10 +158,12 @@ public class PipelineProgressView extends HBox {
         }
 
         void setStatus(StageStatus status) {
+            this.status = status;
             String color = switch (status) {
                 case PENDING   -> COLOR_PENDING;
                 case ACTIVE    -> COLOR_ACTIVE;
                 case COMPLETED -> COLOR_DONE;
+                case SKIPPED   -> COLOR_SKIPPED;
                 case ERROR     -> COLOR_ERROR;
             };
 

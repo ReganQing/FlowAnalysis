@@ -35,19 +35,23 @@ public class AnalysisState extends AgentState {
      * LangGraph4J Channel Schema
      */
     public static final Map<String, Channel<?>> SCHEMA = Map.ofEntries(
-        Map.entry(CSV_PATH_KEY,           Channels.base(() -> null)),
-        Map.entry(RAW_DATA_KEY,           Channels.base(() -> null)),
-        Map.entry(CLEANED_DATA_KEY,       Channels.base(() -> null)),
-        Map.entry(DATA_PROFILE_KEY,       Channels.base(() -> null)),
-        Map.entry(ANALYSIS_PLAN_KEY,      Channels.base(() -> null)),
+        Map.entry(CSV_PATH_KEY,           lastValue()),
+        Map.entry(RAW_DATA_KEY,           lastValue()),
+        Map.entry(CLEANED_DATA_KEY,       lastValue()),
+        Map.entry(DATA_PROFILE_KEY,       lastValue()),
+        Map.entry(ANALYSIS_PLAN_KEY,      lastValue()),
         Map.entry(ANALYSIS_RESULTS_KEY,   Channels.appender(ArrayList::new)),
         Map.entry(INSIGHTS_KEY,           Channels.appender(ArrayList::new)),
         Map.entry(CHART_EMBEDS_KEY,       Channels.appender(ArrayList::new)),
-        Map.entry(REPORT_PATH_KEY,        Channels.base(() -> null)),
+        Map.entry(REPORT_PATH_KEY,        lastValue()),
         Map.entry(ERRORS_KEY,             Channels.appender(ArrayList::new)),
         Map.entry(CURRENT_STEP_KEY,       Channels.base(() -> "START")),
         Map.entry(DATA_SUMMARY_KEY,       Channels.base(() -> ""))
     );
+
+    private static <T> Channel<T> lastValue() {
+        return Channels.base((oldValue, newValue) -> newValue);
+    }
 
     public AnalysisState(Map<String, Object> initData) {
         super(initData);

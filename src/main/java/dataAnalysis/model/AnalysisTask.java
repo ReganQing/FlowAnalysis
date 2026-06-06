@@ -12,4 +12,4 @@ public record AnalysisTask(
     String target,
     Map<String, String> parameters,
     int priority
-) {}
+) implements java.io.Serializable {}

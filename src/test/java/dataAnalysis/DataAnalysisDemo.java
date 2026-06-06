@@ -50,6 +50,7 @@ public class DataAnalysisDemo {
         } catch (Exception e) {
             System.err.println("分析失败: " + e.getMessage());
             e.printStackTrace();
+            throw new RuntimeException("数据分析管线执行失败", e);
         }
     }
 

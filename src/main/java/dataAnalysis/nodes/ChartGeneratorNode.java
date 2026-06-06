@@ -32,7 +32,7 @@ public class ChartGeneratorNode implements NodeAction<AnalysisState> {
                 try {
                     String chartPath = chartTools.createStatsChart(table, "amount");
                     String base64 = encodeImageToBase64(chartPath);
-                    charts.add(new ChartEmbed("销售额统计", base64, "销售额的均值、中位数、最小值、最大值"));
+                    charts.add(new ChartEmbed("销售额统计", base64, "销售额的均值、中位数、最小值、最大值", chartPath));
                     System.out.println("统计图表已生成: " + chartPath);
                 } catch (Exception e) {
                     System.err.println("统计图表生成失败: " + e.getMessage());
@@ -53,7 +53,7 @@ public class ChartGeneratorNode implements NodeAction<AnalysisState> {
                     }
                     String chartPath = chartTools.createSimpleBarChart("区域销售额", labels, values.toString());
                     String base64 = encodeImageToBase64(chartPath);
-                    charts.add(new ChartEmbed("区域销售分布", base64, "各区域销售额对比"));
+                    charts.add(new ChartEmbed("区域销售分布", base64, "各区域销售额对比", chartPath));
                     System.out.println("区域图表已生成: " + chartPath);
                 } catch (Exception e) {
                     System.err.println("区域图表生成失败: " + e.getMessage());

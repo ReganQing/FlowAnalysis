@@ -28,6 +28,7 @@
         <commonmark.version>0.22.0</commonmark.version>
         <poi.version>5.2.5</poi.version>
         <junit.version>5.11.4</junit.version>
+        <exec.mainClass>desktop.app.DesktopApp</exec.mainClass>
     </properties>
 
     <dependencyManagement>
@@ -251,7 +252,8 @@
                 <artifactId>exec-maven-plugin</artifactId>
                 <version>3.1.0</version>
                 <configuration>
-                    <mainClass>desktop.app.DesktopApp</mainClass>
+                    <mainClass>${exec.mainClass}</mainClass>
+                    <classpathScope>test</classpathScope>
                 </configuration>
             </plugin>
         </plugins>

@@ -5,12 +5,13 @@ import dataAnalysis.ProgressListener;
 import javafx.application.Platform;
 
 import java.util.concurrent.*;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
  * 数据分析服务 — 封装 {@link DataAnalysisGraph}，管理后台线程，
  * 确保所有 {@link ProgressListener} 回调在 JavaFX Application Thread 上执行。
  */
-public class AnalysisService {
+public class AnalysisService implements AutoCloseable {
 
     private final ExecutorService executor = Executors.newSingleThreadExecutor(r -> {
         Thread t = new Thread(r, "data-analysis-worker");
@@ -19,8 +20,6 @@ public class AnalysisService {
     });
 
     private volatile Future<?> currentTask;
-    private volatile boolean cancelled = false;
-
     /**
      * 异步执行数据分析管线。
      * <p>
@@ -31,17 +30,18 @@ public class AnalysisService {
      * @param listener 进度监听器（回调在 FX 线程）
      */
     public void analyzeFile(String filePath, ProgressListener listener) {
-        cancelled = false;
-
-        ProgressListener fxListener = wrapForFxThread(listener);
+        AtomicBoolean terminalErrorReported = new AtomicBoolean();
+        ProgressListener fxListener = wrapForFxThread(listener, terminalErrorReported);
 
         currentTask = executor.submit(() -> {
             try {
                 DataAnalysisGraph graph = new DataAnalysisGraph();
                 graph.execute(filePath, fxListener);
             } catch (Exception e) {
-                Platform.runLater(() -> fxListener.onPipelineError(
-                    "分析执行失败: " + e.getMessage()));
+                if (terminalErrorReported.compareAndSet(false, true)) {
+                    Platform.runLater(() -> listener.onPipelineError(
+                        "分析执行失败: " + e.getMessage()));
+                }
             }
         });
     }
@@ -50,7 +50,6 @@ public class AnalysisService {
      * 取消正在执行的分析任务。
      */
     public void cancelAnalysis() {
-        cancelled = true;
         if (currentTask != null && !currentTask.isDone()) {
             currentTask.cancel(true);
         }
@@ -63,10 +62,17 @@ public class AnalysisService {
         return currentTask != null && !currentTask.isDone();
     }
 
+    @Override
+    public void close() {
+        cancelAnalysis();
+        executor.shutdownNow();
+    }
+
     /**
      * 将 ProgressListener 的所有方法调用包装到 Platform.runLater() 中。
      */
-    private static ProgressListener wrapForFxThread(ProgressListener delegate) {
+    private static ProgressListener wrapForFxThread(
+            ProgressListener delegate, AtomicBoolean terminalErrorReported) {
         return new ProgressListener() {
             @Override
             public void onNodeStart(String nodeName, int stageIndex) {
@@ -95,7 +101,9 @@ public class AnalysisService {
 
             @Override
             public void onPipelineError(String error) {
-                Platform.runLater(() -> delegate.onPipelineError(error));
+                if (terminalErrorReported.compareAndSet(false, true)) {
+                    Platform.runLater(() -> delegate.onPipelineError(error));
+                }
             }
         };
     }

@@ -11,7 +11,7 @@ public record AnalysisPlan(
     String reasoning,
     List<String> suggestedCharts,
     int currentTaskIndex
-) {
+) implements java.io.Serializable {
     public String nextStep() {
         if (currentTaskIndex >= tasks.size()) {
             return "chart";

@@ -8,10 +8,7 @@ import javafx.scene.control.TableView;
 import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.HBox;
 
-import java.io.BufferedReader;
-import java.io.FileReader;
 import java.nio.file.Path;
-import java.util.ArrayList;
 import java.util.List;
 
 /**
@@ -32,7 +29,8 @@ public class CsvPreviewView extends BorderPane {
      */
     public void loadCsv(String filePath) {
         try {
-            List<String[]> rows = readCsvRows(filePath);
+            List<String[]> rows = CsvPreviewDataReader.read(
+                Path.of(filePath), MAX_PREVIEW_ROWS + 1);
             if (rows.isEmpty()) {
                 setCenter(new Label("文件为空"));
                 return;
@@ -89,36 +87,4 @@ public class CsvPreviewView extends BorderPane {
         }
     }
 
-    /** 读取 CSV 文件的所有行（简易逗号分割）。 */
-    private static List<String[]> readCsvRows(String filePath) throws Exception {
-        List<String[]> rows = new ArrayList<>();
-        try (BufferedReader reader = new BufferedReader(new FileReader(filePath))) {
-            String line;
-            while ((line = reader.readLine()) != null) {
-                rows.add(parseCsvLine(line));
-            }
-        }
-        return rows;
-    }
-
-    /** 简易 CSV 行解析（处理引号内的逗号）。 */
-    private static String[] parseCsvLine(String line) {
-        List<String> fields = new ArrayList<>();
-        StringBuilder current = new StringBuilder();
-        boolean inQuotes = false;
-
-        for (int i = 0; i < line.length(); i++) {
-            char c = line.charAt(i);
-            if (c == '"') {
-                inQuotes = !inQuotes;
-            } else if (c == ',' && !inQuotes) {
-                fields.add(current.toString().trim());
-                current = new StringBuilder();
-            } else {
-                current.append(c);
-            }
-        }
-        fields.add(current.toString().trim());
-        return fields.toArray(new String[0]);
-    }
 }

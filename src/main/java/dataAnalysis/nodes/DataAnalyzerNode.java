@@ -45,7 +45,10 @@ public class DataAnalyzerNode implements NodeAction<AnalysisState> {
             AnalysisTask task = plan.currentTask();
             if (task == null || task.type() == AnalysisType.INSIGHT) {
                 System.out.println("当前无分析任务或任务为洞察类型，跳过");
-                return Map.of(AnalysisState.CURRENT_STEP_KEY, "ANALYSIS_SKIPPED");
+                return Map.of(
+                    AnalysisState.ANALYSIS_PLAN_KEY, plan.advance(),
+                    AnalysisState.CURRENT_STEP_KEY, "ANALYSIS_SKIPPED"
+                );
             }
 
             System.out.println("执行分析任务: " + task.target());
@@ -67,15 +70,20 @@ public class DataAnalyzerNode implements NodeAction<AnalysisState> {
 
             return Map.of(
                 AnalysisState.ANALYSIS_RESULTS_KEY, resultMap,
+                AnalysisState.ANALYSIS_PLAN_KEY, plan.advance(),
                 AnalysisState.CURRENT_STEP_KEY, "ANALYZED",
                 AnalysisState.DATA_SUMMARY_KEY, state.dataSummary() + "\n\n### " + task.target() + "\n" + narrative
             );
         } catch (Exception e) {
             System.err.println("数据分析失败: " + e.getMessage());
-            return Map.of(
-                AnalysisState.ERRORS_KEY, List.of("数据分析失败: " + e.getMessage()),
-                AnalysisState.CURRENT_STEP_KEY, "ERROR"
-            );
+            Map<String, Object> output = new LinkedHashMap<>();
+            output.put(AnalysisState.ERRORS_KEY, List.of("数据分析失败: " + e.getMessage()));
+            output.put(AnalysisState.CURRENT_STEP_KEY, "ERROR");
+            AnalysisPlan plan = state.analysisPlan();
+            if (plan != null) {
+                output.put(AnalysisState.ANALYSIS_PLAN_KEY, plan.advance());
+            }
+            return output;
         }
     }
 
@@ -115,20 +123,21 @@ public class DataAnalyzerNode implements NodeAction<AnalysisState> {
         return switch (task.type()) {
             case TREND -> analysisTools.salesTrendAnalysis(
                 table,
-                params.getOrDefault("dateColumn", "date"),
-                params.getOrDefault("valueColumn", "amount"),
-                params.getOrDefault("interval", "month")
+                parameter(params, "date", "dateColumn", "date_column"),
+                parameter(params, "amount", "valueColumn", "value_column"),
+                parameter(params, "month", "interval", "timeGranularity", "time_granularity")
             );
             case DISTRIBUTION -> analysisTools.descriptiveStats(table);
             case CORRELATION -> analysisTools.correlationAnalysis(
                 table,
-                params.getOrDefault("col1", "quantity"),
-                params.getOrDefault("col2", "amount")
+                correlationColumn(params, 0, "quantity", "col1"),
+                correlationColumn(params, 1, "amount", "col2")
             );
             case COMPARISON -> analysisTools.regionalSalesAnalysis(
                 table,
-                params.getOrDefault("groupColumn", "region"),
-                params.getOrDefault("valueColumn", "amount")
+                parameter(params, "region", "groupColumn", "group_column",
+                    "categoryColumn", "category_column"),
+                parameter(params, "amount", "valueColumn", "value_column")
             );
             case OUTLIER -> analysisTools.correlationAnalysis(
                 table,
@@ -137,5 +146,25 @@ public class DataAnalyzerNode implements NodeAction<AnalysisState> {
             );
             default -> "{\"note\": \"不支持的分析类型\"}";
         };
+    }
+
+    private static String parameter(Map<String, String> params, String fallback, String... keys) {
+        for (String key : keys) {
+            String value = params.get(key);
+            if (value != null && !value.isBlank()) {
+                return value;
+            }
+        }
+        return fallback;
+    }
+
+    private static String correlationColumn(
+            Map<String, String> params, int index, String fallback, String directKey) {
+        String direct = parameter(params, "", directKey);
+        if (!direct.isBlank()) {
+            return direct;
+        }
+        String[] columns = parameter(params, "", "columns").split(",");
+        return index < columns.length && !columns[index].isBlank() ? columns[index].trim() : fallback;
     }
 }

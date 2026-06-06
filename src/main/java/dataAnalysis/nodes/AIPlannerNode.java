@@ -116,7 +116,15 @@ public class AIPlannerNode implements NodeAction<AnalysisState> {
                     var params = new LinkedHashMap<String, String>();
                     var paramsNode = taskNode.get("parameters");
                     if (paramsNode != null && paramsNode.isObject()) {
-                        paramsNode.fields().forEachRemaining(e -> params.put(e.getKey(), e.getValue().asText()));
+                        paramsNode.fields().forEachRemaining(e -> {
+                            if (e.getValue().isArray()) {
+                                var values = new ArrayList<String>();
+                                e.getValue().forEach(value -> values.add(value.asText()));
+                                params.put(e.getKey(), String.join(",", values));
+                            } else {
+                                params.put(e.getKey(), e.getValue().asText());
+                            }
+                        });
                     }
 
                     tasks.add(new AnalysisTask(

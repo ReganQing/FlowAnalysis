@@ -6,5 +6,10 @@ package dataAnalysis.model;
 public record ChartEmbed(
     String title,
     String base64Image,
-    String description
-) {}
+    String description,
+    String outputPath
+) implements java.io.Serializable {
+    public ChartEmbed(String title, String base64Image, String description) {
+        this(title, base64Image, description, null);
+    }
+}

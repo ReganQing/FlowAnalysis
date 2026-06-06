@@ -9,4 +9,4 @@ public record ColumnProfile(
     int missingCount,
     int uniqueCount,
     double missingRate
-) {}
+) implements java.io.Serializable {}

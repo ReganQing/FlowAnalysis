@@ -196,6 +196,7 @@ public class ChatViewController implements Initializable {
      */
     private void triggerDataAnalysis(Path filePath) {
         if (currentSessionId == null) return;
+        String requestSessionId = currentSessionId;
 
         // 清除空状态占位
         if (messagesContainer.getChildren().size() == 1
@@ -205,7 +206,7 @@ public class ChatViewController implements Initializable {
 
         // 显示用户上传消息
         String fileName = filePath.getFileName().toString();
-        ChatMessage userMsg = chatService.saveUserMessage(currentSessionId, "📎 上传文件: " + fileName);
+        ChatMessage userMsg = chatService.saveUserMessage(requestSessionId, "📎 上传文件: " + fileName);
         messagesContainer.getChildren().add(new MessageBubble(userMsg));
 
         // 创建管线进度条
@@ -215,12 +216,6 @@ public class ChatViewController implements Initializable {
         // 日志卡片跟踪表：节点名 → AgentLogCard
         java.util.Map<String, AgentLogCard> logCards = new java.util.LinkedHashMap<>();
 
-        // 节点名 → 阶段索引映射
-        java.util.Map<String, Integer> stageMap = java.util.Map.of(
-            "parser", 0, "cleaner", 1, "planner", 2,
-            "analyzer", 3, "insight", 3, "chart", 4, "report", 5
-        );
-
         scrollToBottom();
         setInputEnabled(false);
 
@@ -228,7 +223,8 @@ public class ChatViewController implements Initializable {
         ProgressListener listener = new ProgressListener() {
             @Override
             public void onNodeStart(String nodeName, int stageIndex) {
-                int idx = stageMap.getOrDefault(nodeName, 0);
+                if (!requestSessionId.equals(currentSessionId)) return;
+                int idx = stageIndex - 1;
                 progressView.updateStage(idx, PipelineProgressView.StageStatus.ACTIVE);
 
                 // 创建日志卡片
@@ -240,6 +236,7 @@ public class ChatViewController implements Initializable {
 
             @Override
             public void onNodeProgress(String nodeName, String message) {
+                if (!requestSessionId.equals(currentSessionId)) return;
                 AgentLogCard card = logCards.get(nodeName);
                 if (card != null) {
                     // 简单判断日志级别
@@ -256,6 +253,9 @@ public class ChatViewController implements Initializable {
 
             @Override
             public void onNodeComplete(String nodeName, long durationMs) {
+                if (!requestSessionId.equals(currentSessionId)) return;
+                int idx = progressView.indexOfNode(nodeName);
+                progressView.updateStage(idx, PipelineProgressView.StageStatus.COMPLETED);
                 AgentLogCard card = logCards.get(nodeName);
                 if (card != null) {
                     card.addLog("完成", AgentLogCard.LogLevel.RESULT);
@@ -265,7 +265,8 @@ public class ChatViewController implements Initializable {
 
             @Override
             public void onNodeError(String nodeName, String error) {
-                int idx = stageMap.getOrDefault(nodeName, 0);
+                if (!requestSessionId.equals(currentSessionId)) return;
+                int idx = progressView.indexOfNode(nodeName);
                 progressView.updateStage(idx, PipelineProgressView.StageStatus.ERROR);
                 AgentLogCard card = logCards.get(nodeName);
                 if (card != null) {
@@ -275,31 +276,31 @@ public class ChatViewController implements Initializable {
 
             @Override
             public void onPipelineComplete(dataAnalysis.DataAnalysisGraph.AnalysisResult result) {
-                // 最终阶段标记完成
-                progressView.updateStage(6, PipelineProgressView.StageStatus.COMPLETED);
+                chatService.saveAiMessage(requestSessionId,
+                    result.getSummary() != null ? result.getSummary() : "数据分析报告已生成",
+                    "data-analysis");
+                setInputEnabled(true);
+                if (!requestSessionId.equals(currentSessionId)) return;
+
+                progressView.finish();
 
                 // 显示完成消息
                 Label doneLabel = new Label("✅ 分析完成！报告已生成。");
                 doneLabel.setStyle("-fx-text-fill: #34D399; -fx-font-size: 14px; -fx-font-weight: 600; -fx-padding: 8 0;");
                 messagesContainer.getChildren().add(doneLabel);
                 scrollToBottom();
-                setInputEnabled(true);
-
-                // 保存 AI 消息到历史
-                String summary = result.getSummary() != null ? result.getSummary() : "数据分析报告已生成";
-                chatService.saveAiMessage(currentSessionId, summary, "data-analysis");
-
                 // 展开右栏文件预览面板
                 showResultPreview(result);
             }
 
             @Override
             public void onPipelineError(String error) {
+                setInputEnabled(true);
+                if (!requestSessionId.equals(currentSessionId)) return;
                 Label errorLabel = new Label("❌ 分析失败: " + error);
                 errorLabel.setStyle("-fx-text-fill: #F87171; -fx-font-size: 14px; -fx-padding: 8 0;");
                 messagesContainer.getChildren().add(errorLabel);
                 scrollToBottom();
-                setInputEnabled(true);
             }
         };
 
@@ -472,6 +473,11 @@ public class ChatViewController implements Initializable {
         this.onSessionTitleUpdated = callback;
     }
 
+    public void shutdown() {
+        analysisService.close();
+        backgroundExecutor.shutdownNow();
+    }
+
     // ── 右栏预览面板控制 ────────────────────────────────────
 
     /**
@@ -490,18 +496,11 @@ public class ChatViewController implements Initializable {
             filePreviewPanel.addFile(result.getReportPath());
         }
 
-        // 添加图表文件（扫描 output/charts/ 目录）
-        java.nio.file.Path chartsDir = java.nio.file.Path.of("output", "charts");
-        if (java.nio.file.Files.isDirectory(chartsDir)) {
-            try (var stream = java.nio.file.Files.list(chartsDir)) {
-                stream.filter(p -> {
-                    String name = p.getFileName().toString().toLowerCase();
-                    return name.endsWith(".png") || name.endsWith(".jpg");
-                }).sorted().forEach(p -> filePreviewPanel.addFile(p.toString()));
-            } catch (Exception ignored) {
-                // 图表目录扫描失败不阻断流程
-            }
-        }
+        result.getOutputFiles().stream()
+            .filter(path -> path.toLowerCase().endsWith(".png")
+                || path.toLowerCase().endsWith(".jpg")
+                || path.toLowerCase().endsWith(".jpeg"))
+            .forEach(filePreviewPanel::addFile);
 
         // 添加源数据文件预览（CSV）
         if (result.getCsvPath() != null) {

@@ -13,7 +13,7 @@ public record DataProfile(
     List<String> numericColumns,
     List<String> categoricalColumns,
     List<String> dateColumns
-) {
+) implements java.io.Serializable {
     public String toSummary() {
         StringBuilder sb = new StringBuilder();
         sb.append(String.format("数据概况: %d 行 × %d 列\n", rowCount, columnCount));

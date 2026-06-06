@@ -1,6 +1,7 @@
 package dataAnalysis.nodes;
 
 import dataAnalysis.AnalysisState;
+import dataAnalysis.model.AnalysisPlan;
 import dataAnalysis.model.Insight;
 import dataAnalysis.model.InsightSeverity;
 import dataAnalysis.router.ModelRouter;
@@ -26,8 +27,12 @@ public class InsightNode implements NodeAction<AnalysisState> {
 
         try {
             String summary = state.dataSummary();
+            AnalysisPlan plan = state.analysisPlan();
             if (summary == null || summary.isEmpty()) {
-                return Map.of(AnalysisState.CURRENT_STEP_KEY, "INSIGHT_SKIPPED");
+                return Map.of(
+                    AnalysisState.ANALYSIS_PLAN_KEY, plan.advance(),
+                    AnalysisState.CURRENT_STEP_KEY, "INSIGHT_SKIPPED"
+                );
             }
 
             String prompt = """
@@ -61,14 +66,19 @@ public class InsightNode implements NodeAction<AnalysisState> {
 
             return Map.of(
                 AnalysisState.INSIGHTS_KEY, insights,
+                AnalysisState.ANALYSIS_PLAN_KEY, plan.advance(),
                 AnalysisState.CURRENT_STEP_KEY, "INSIGHT_GENERATED"
             );
         } catch (Exception e) {
             System.err.println("洞察生成失败: " + e.getMessage());
-            return Map.of(
-                AnalysisState.ERRORS_KEY, List.of("洞察生成失败: " + e.getMessage()),
-                AnalysisState.CURRENT_STEP_KEY, "INSIGHT_ERROR"
-            );
+            Map<String, Object> output = new LinkedHashMap<>();
+            output.put(AnalysisState.ERRORS_KEY, List.of("洞察生成失败: " + e.getMessage()));
+            output.put(AnalysisState.CURRENT_STEP_KEY, "INSIGHT_ERROR");
+            AnalysisPlan plan = state.analysisPlan();
+            if (plan != null) {
+                output.put(AnalysisState.ANALYSIS_PLAN_KEY, plan.advance());
+            }
+            return output;
         }
     }
 

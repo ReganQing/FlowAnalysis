@@ -166,6 +166,13 @@ public class DesktopApp extends Application {
         alert.showAndWait();
     }
 
+    @Override
+    public void stop() {
+        if (chatController != null) {
+            chatController.shutdown();
+        }
+    }
+
     public static void main(String[] args) {
         launch(args);
     }
