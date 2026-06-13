@@ -2,10 +2,13 @@ package dataAnalysis.nodes;
 
 import dataAnalysis.AnalysisState;
 import dataAnalysis.ColumnSelection;
+import dataAnalysis.ProgressListener;
+import dataAnalysis.SubTaskProgress;
 import dataAnalysis.model.AnalysisPlan;
 import dataAnalysis.model.AnalysisTask;
 import dataAnalysis.model.AnalysisType;
 import dataAnalysis.model.DataProfile;
+import dataAnalysis.model.SubTaskEvent;
 import dataAnalysis.router.ModelRouter;
 import dataAnalysis.tools.AnalysisTools;
 import dataAnalysis.tools.BaseTools;
@@ -21,16 +24,25 @@ import java.util.*;
  */
 public class DataAnalyzerNode implements NodeAction<AnalysisState> {
 
+    private static final String NODE_NAME = "analyzer";
+
     private final ChatModel model;
     private final AnalysisTools analysisTools = new AnalysisTools();
+    private final ProgressListener listener;
 
     public DataAnalyzerNode(ModelRouter modelRouter) {
+        this(modelRouter, null);
+    }
+
+    public DataAnalyzerNode(ModelRouter modelRouter, ProgressListener listener) {
         this.model = modelRouter.getModelForTask(ModelRouter.TaskType.ANALYSIS);
+        this.listener = listener;
     }
 
     /** 仅供测试：不依赖 ModelRouter（executeTask 不使用 model）。 */
     DataAnalyzerNode() {
         this.model = null;
+        this.listener = null;
     }
 
     @Override
@@ -59,6 +71,7 @@ public class DataAnalyzerNode implements NodeAction<AnalysisState> {
             }
 
             System.out.println("执行分析任务: " + task.target());
+            reportSubTaskStarted(state.analysisPlan(), task.target());
 
             // 纯计算：执行统计工具获取原始 JSON 结果
             String result = executeTask(table, task, state.dataProfile());
@@ -67,6 +80,7 @@ public class DataAnalyzerNode implements NodeAction<AnalysisState> {
             // AI 解读：将原始统计结果转化为中文叙述
             String narrative = interpretWithAI(task, result);
             System.out.println("AI叙述: " + (narrative.length() > 200 ? narrative.substring(0, 200) + "..." : narrative));
+            reportSubTaskCompleted(state.analysisPlan(), task.target());
 
             Map<String, String> resultMap = new LinkedHashMap<>();
             resultMap.put("taskId", task.taskId());
@@ -83,6 +97,10 @@ public class DataAnalyzerNode implements NodeAction<AnalysisState> {
             );
         } catch (Exception e) {
             System.err.println("数据分析失败: " + e.getMessage());
+            AnalysisPlan planForError = state.analysisPlan();
+            if (planForError != null && planForError.currentTask() != null) {
+                reportSubTaskError(planForError, planForError.currentTask().target());
+            }
             Map<String, Object> output = new LinkedHashMap<>();
             output.put(AnalysisState.ERRORS_KEY, List.of("数据分析失败: " + e.getMessage()));
             output.put(AnalysisState.CURRENT_STEP_KEY, "ERROR");
@@ -193,5 +211,24 @@ public class DataAnalyzerNode implements NodeAction<AnalysisState> {
         }
         String[] columns = parameter(params, "", "columns").split(",");
         return index < columns.length && !columns[index].isBlank() ? columns[index].trim() : fallback;
+    }
+
+    private void reportSubTaskStarted(AnalysisPlan plan, String label) {
+        reportSubTask(plan, label, SubTaskEvent.TaskStatus.STARTED);
+    }
+
+    private void reportSubTaskCompleted(AnalysisPlan plan, String label) {
+        reportSubTask(plan, label, SubTaskEvent.TaskStatus.COMPLETED);
+    }
+
+    private void reportSubTaskError(AnalysisPlan plan, String label) {
+        reportSubTask(plan, label, SubTaskEvent.TaskStatus.ERROR);
+    }
+
+    private void reportSubTask(AnalysisPlan plan, String label, SubTaskEvent.TaskStatus status) {
+        if (listener == null || plan == null) return;
+        int total = SubTaskProgress.total(plan.tasks(), SubTaskProgress.Scope.ANALYSIS);
+        int index = SubTaskProgress.indexOf(plan.tasks(), plan.currentTaskIndex(), SubTaskProgress.Scope.ANALYSIS);
+        listener.onSubTask(NODE_NAME, new SubTaskEvent(index, total, label, status));
     }
 }
