@@ -95,6 +95,11 @@ public class AnalysisService implements AutoCloseable {
             }
 
             @Override
+            public void onSubTask(String nodeName, dataAnalysis.model.SubTaskEvent event) {
+                Platform.runLater(() -> delegate.onSubTask(nodeName, event));
+            }
+
+            @Override
             public void onPipelineComplete(DataAnalysisGraph.AnalysisResult result) {
                 Platform.runLater(() -> delegate.onPipelineComplete(result));
             }
