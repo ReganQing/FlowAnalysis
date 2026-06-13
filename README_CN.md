@@ -186,9 +186,11 @@ mvn exec:java -Dexec.mainClass="dataAnalysis.DataAnalysisDemo"
 
 ### 运行桌面应用
 
+> 请使用 `mvn javafx:run` 启动（而非 `mvn exec:java`），以确保 JavaFX 的 `jfxwebkit` 原生库正常加载，WebView 才能内嵌渲染报告。
+
 ```bash
 mvn clean compile
-mvn exec:java
+mvn javafx:run
 ```
 
 > 首次启动时应用会自动在 `data/assistant.db` 初始化 SQLite 数据库。

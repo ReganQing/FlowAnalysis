@@ -13,7 +13,7 @@ Java Maven learning/demo project for **LangChain4j (v1.4.0)** demonstrating AI c
 ```bash
 mvn clean compile                                        # Compile everything
 mvn test                                                 # Run JUnit 5 tests
-mvn exec:java                                            # Launch desktop app (default mainClass)
+mvn javafx:run                                            # Launch desktop app
 mvn exec:java -Dexec.mainClass="dataAnalysis.DataAnalysisDemo"  # Multi-agent pipeline
 ```
 
@@ -37,7 +37,7 @@ mvn exec:java -Dexec.mainClass="SentimentClassification"   # Sentiment analysis
 
 ```bash
 mvn clean compile                                        # Compile
-mvn exec:java                                            # Launch desktop app (default mainClass)
+mvn javafx:run                                          # Launch desktop app (via javafx-maven-plugin, loads jfxwebkit)
 ```
 
 需要 `DASHSCOPE_API_KEY` 环境变量。数据库自动初始化在 `data/assistant.db`，Schema 定义在 `src/main/resources/desktop/db/schema.sql`。

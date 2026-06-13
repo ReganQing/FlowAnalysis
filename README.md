@@ -186,9 +186,11 @@ mvn exec:java -Dexec.mainClass="dataAnalysis.DataAnalysisDemo"
 
 ### Run Desktop App
 
+> Use `mvn javafx:run` (not `mvn exec:java`) so the JavaFX `jfxwebkit` native library loads and WebView can render reports inline.
+
 ```bash
 mvn clean compile
-mvn exec:java
+mvn javafx:run
 ```
 
 > The app automatically initializes the SQLite database at `data/assistant.db` on first launch.
