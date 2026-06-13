@@ -119,13 +119,11 @@ public class AgentLogCard extends VBox {
         ensureExpanded();
     }
 
-    /** 整阶段完成：标记 ✅ 并延迟折叠。区别于单任务完成。 */
+    /** 整阶段完成：仅标记 ✅ 与耗时，不自动折叠——迭代节点需保持展开以累计子步骤。
+     *  区别于 {@link #setCompleted(long)}（单节点完成会自动折叠）。 */
     public void markPhaseComplete(long durationMs) {
         statusLabel.setText("✅");
         durationLabel.setText(durationMs + "ms");
-        javafx.animation.PauseTransition delay = new javafx.animation.PauseTransition(Duration.millis(300));
-        delay.setOnFinished(e -> collapse());
-        delay.play();
     }
 
     private void ensureExpanded() {
