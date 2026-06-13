@@ -41,9 +41,10 @@ public final class HtmlReportGenerator {
     public static String generate(ReportData reportData) throws IOException {
         String html = buildHtml(reportData);
         String filename = String.format("analysis_report_%s.html", TIMESTAMP.format(LocalDateTime.now()));
-        String filepath = OUTPUT_DIR + filename;
+        File outputFile = new File(OUTPUT_DIR, filename).getAbsoluteFile();
+        String filepath = outputFile.getAbsolutePath();
 
-        try (FileWriter writer = new FileWriter(filepath)) {
+        try (FileWriter writer = new FileWriter(outputFile)) {
             writer.write(html);
         }
         return filepath;

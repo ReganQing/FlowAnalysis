@@ -12,11 +12,26 @@ import java.nio.file.Path;
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class FileUploadServiceTest {
 
     @TempDir
     Path tempDir;
+
+    @Test
+    void uploadedCsvPathShouldBeAbsolute(@TempDir Path absoluteTempDir) throws Exception {
+        // 用相对目录构造，模拟生产中 Path.of("output","uploads")
+        Path sourceCsv = Files.createTempFile(absoluteTempDir, "sample", ".csv");
+        Files.writeString(sourceCsv, "category,value\nA,1\n");
+
+        FileUploadService service = new FileUploadService(Path.of("output", "uploads"));
+
+        Path result = service.uploadFile(sourceCsv);
+
+        assertTrue(result.isAbsolute(),
+            "上传返回路径必须为绝对路径，否则在不同工作目录下无法被预览面板定位；实际: " + result);
+    }
 
     @Test
     void convertsExcelWithoutCollapsingEmptyColumnsAndUsesDisplayedValues() throws Exception {

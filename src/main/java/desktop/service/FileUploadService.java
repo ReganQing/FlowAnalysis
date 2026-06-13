@@ -25,11 +25,11 @@ public class FileUploadService {
     private final Path uploadDir;
 
     public FileUploadService() {
-        this(Path.of("output", "uploads"));
+        this(Path.of("output", "uploads").toAbsolutePath());
     }
 
     FileUploadService(Path uploadDir) {
-        this.uploadDir = uploadDir;
+        this.uploadDir = uploadDir.toAbsolutePath();
     }
 
     /**

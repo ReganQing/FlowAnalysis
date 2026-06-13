@@ -300,9 +300,9 @@ public class ChartTools {
 
     private String saveChart(JFreeChart chart, String prefix) throws Exception {
         String filename = String.format("%s_%s.png", prefix, TIMESTAMP.format(LocalDateTime.now()));
-        String filepath = OUTPUT_DIR + filename;
-        ChartUtils.saveChartAsPNG(new File(filepath), chart, ChartStyle.CHART_WIDTH, ChartStyle.CHART_HEIGHT);
-        return filepath;
+        File outputFile = new File(OUTPUT_DIR, filename).getAbsoluteFile();
+        ChartUtils.saveChartAsPNG(outputFile, chart, ChartStyle.CHART_WIDTH, ChartStyle.CHART_HEIGHT);
+        return outputFile.getAbsolutePath();
     }
 
 }
