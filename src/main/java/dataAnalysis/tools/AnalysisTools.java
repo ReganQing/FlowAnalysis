@@ -12,7 +12,7 @@ import java.util.*;
 
 /**
  * 数据分析工具
- * 提供销售数据的各种分析功能，包括趋势分析、排行分析、区域分析等
+ * 提供通用的数据分析功能，包括趋势分析、排行分析、分组汇总、相关性分析等
  */
 public class AnalysisTools {
 
@@ -51,13 +51,13 @@ public class AnalysisTools {
     }
 
     /**
-     * 销售趋势分析
+     * 时间趋势分析
      */
-    @Tool("按时间维度分析销售趋势，支持按日、周、月聚合")
+    @Tool("按时间维度分析数值列的趋势，支持按日、周、月聚合")
     public String salesTrendAnalysis(
             @P("数据表") Table data,
             @P("日期列名") String dateColumn,
-            @P("销售额列名") String amountColumn,
+            @P("数值列名") String amountColumn,
             @P("时间粒度: day/week/month") String granularity) {
 
         if (!data.containsColumn(dateColumn) || !data.containsColumn(amountColumn)) {
@@ -87,14 +87,14 @@ public class AnalysisTools {
     }
 
     /**
-     * 产品销售排行
+     * Top N 排行分析
      */
-    @Tool("计算产品销售排行榜，返回 Top N 产品")
+    @Tool("按指定维度计算 Top N 排行，返回汇总值最高的 N 项")
     public String topSellingProducts(
             @P("数据表") Table data,
-            @P("产品ID列名") String productIdColumn,
-            @P("产品名列名") String productNameColumn,
-            @P("销售额列名") String amountColumn,
+            @P("维度标识列名") String productIdColumn,
+            @P("维度名称列名") String productNameColumn,
+            @P("数值列名") String amountColumn,
             @P("Top N 数量") int n) {
 
         if (!data.containsColumn(productNameColumn) || !data.containsColumn(amountColumn)) {
@@ -127,13 +127,13 @@ public class AnalysisTools {
     }
 
     /**
-     * 区域销售分析
+     * 分组汇总分析（总和与计数）
      */
-    @Tool("按地区统计销售额和订单量")
+    @Tool("按分类列汇总数值列的总和与计数")
     public String regionalSalesAnalysis(
             @P("数据表") Table data,
-            @P("地区列名") String regionColumn,
-            @P("销售额列名") String amountColumn) {
+            @P("分类列名") String regionColumn,
+            @P("数值列名") String amountColumn) {
 
         if (!data.containsColumn(regionColumn) || !data.containsColumn(amountColumn)) {
             return "{\"error\": \"指定的列不存在\"}";
@@ -165,13 +165,13 @@ public class AnalysisTools {
     }
 
     /**
-     * 渠道销售对比
+     * 分组占比对比
      */
-    @Tool("对比不同销售渠道（线上/线下）的销售表现")
+    @Tool("对比不同分组在数值列上的占比")
     public String channelComparison(
             @P("数据表") Table data,
-            @P("渠道列名") String channelColumn,
-            @P("销售额列名") String amountColumn) {
+            @P("分组列名") String channelColumn,
+            @P("数值列名") String amountColumn) {
 
         if (!data.containsColumn(channelColumn) || !data.containsColumn(amountColumn)) {
             return "{\"error\": \"指定的列不存在\"}";
