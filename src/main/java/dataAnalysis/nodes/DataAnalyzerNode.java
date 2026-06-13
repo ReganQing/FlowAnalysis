@@ -71,7 +71,7 @@ public class DataAnalyzerNode implements NodeAction<AnalysisState> {
             }
 
             System.out.println("执行分析任务: " + task.target());
-            reportSubTaskStarted(state.analysisPlan(), task.target());
+            reportSubTaskStarted(plan, task.target());
 
             // 纯计算：执行统计工具获取原始 JSON 结果
             String result = executeTask(table, task, state.dataProfile());
@@ -80,7 +80,7 @@ public class DataAnalyzerNode implements NodeAction<AnalysisState> {
             // AI 解读：将原始统计结果转化为中文叙述
             String narrative = interpretWithAI(task, result);
             System.out.println("AI叙述: " + (narrative.length() > 200 ? narrative.substring(0, 200) + "..." : narrative));
-            reportSubTaskCompleted(state.analysisPlan(), task.target());
+            reportSubTaskCompleted(plan, task.target());
 
             Map<String, String> resultMap = new LinkedHashMap<>();
             resultMap.put("taskId", task.taskId());

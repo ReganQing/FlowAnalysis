@@ -40,13 +40,13 @@ public class InsightNode implements NodeAction<AnalysisState> {
         try {
             String summary = state.dataSummary();
             AnalysisPlan plan = state.analysisPlan();
-            reportStarted(plan);
             if (summary == null || summary.isEmpty()) {
                 return Map.of(
                     AnalysisState.ANALYSIS_PLAN_KEY, plan.advance(),
                     AnalysisState.CURRENT_STEP_KEY, "INSIGHT_SKIPPED"
                 );
             }
+            reportStarted(plan);
 
             String prompt = """
                 你是一个数据分析专家。请根据以下分析结果，提取3-5条关键洞察。
