@@ -2,6 +2,7 @@ package dataAnalysis.nodes;
 
 import dataAnalysis.AnalysisState;
 import dataAnalysis.model.ChartEmbed;
+import dataAnalysis.model.DataProfile;
 import dataAnalysis.tools.BaseTools;
 import dataAnalysis.tools.ChartTools;
 import org.bsc.langgraph4j.action.NodeAction;
@@ -26,37 +27,49 @@ public class ChartGeneratorNode implements NodeAction<AnalysisState> {
         try {
             String csvPath = state.csvPath();
             Table table = BaseTools.loadCSVTable(csvPath);
+            DataProfile profile = state.dataProfile();
 
-            // 统计图表
-            if (table.containsColumn("amount")) {
-                try {
-                    String chartPath = chartTools.createStatsChart(table, "amount");
-                    String base64 = encodeImageToBase64(chartPath);
-                    charts.add(new ChartEmbed("销售额统计", base64, "销售额的均值、中位数、最小值、最大值", chartPath));
-                    System.out.println("统计图表已生成: " + chartPath);
-                } catch (Exception e) {
-                    System.err.println("统计图表生成失败: " + e.getMessage());
+            // 统计图：为第一个数值列生成描述性统计图
+            if (profile != null && !profile.numericColumns().isEmpty()) {
+                String numericCol = profile.numericColumns().get(0);
+                if (table.containsColumn(numericCol)) {
+                    try {
+                        String chartPath = chartTools.createStatsChart(table, numericCol);
+                        String base64 = encodeImageToBase64(chartPath);
+                        charts.add(new ChartEmbed(numericCol + " 统计", base64,
+                            numericCol + " 的均值、中位数、最小值、最大值", chartPath));
+                        System.out.println("统计图表已生成: " + chartPath);
+                    } catch (Exception e) {
+                        System.err.println("统计图表生成失败: " + e.getMessage());
+                    }
                 }
             }
 
-            // 区域柱状图
-            if (table.containsColumn("region") && table.containsColumn("amount")) {
-                try {
-                    var regionData = table.summarize("amount", AggregateFunctions.sum)
-                            .by("region");
-                    String labels = String.join(",", regionData.column(0).asStringColumn().asList());
-                    var amountCol = regionData.numberColumn(1);
-                    StringBuilder values = new StringBuilder();
-                    for (int i = 0; i < amountCol.size(); i++) {
-                        if (i > 0) values.append(",");
-                        values.append(String.format("%.0f", amountCol.getDouble(i)));
+            // 分组柱状图：用第一个分类列对第一个数值列汇总
+            if (profile != null
+                    && !profile.categoricalColumns().isEmpty()
+                    && !profile.numericColumns().isEmpty()) {
+                String catCol = profile.categoricalColumns().get(0);
+                String numCol = profile.numericColumns().get(0);
+                if (table.containsColumn(catCol) && table.containsColumn(numCol)) {
+                    try {
+                        var grouped = table.summarize(numCol, AggregateFunctions.sum).by(catCol);
+                        String labels = String.join(",", grouped.column(0).asStringColumn().asList());
+                        var valueCol = grouped.numberColumn(1);
+                        StringBuilder values = new StringBuilder();
+                        for (int i = 0; i < valueCol.size(); i++) {
+                            if (i > 0) values.append(",");
+                            values.append(String.format("%.0f", valueCol.getDouble(i)));
+                        }
+                        String chartPath = chartTools.createSimpleBarChart(
+                            "按 " + catCol + " 分组的 " + numCol, labels, values.toString());
+                        String base64 = encodeImageToBase64(chartPath);
+                        charts.add(new ChartEmbed(catCol + " 分组分布", base64,
+                            "各 " + catCol + " 的 " + numCol + " 对比", chartPath));
+                        System.out.println("分组图表已生成: " + chartPath);
+                    } catch (Exception e) {
+                        System.err.println("分组图表生成失败: " + e.getMessage());
                     }
-                    String chartPath = chartTools.createSimpleBarChart("区域销售额", labels, values.toString());
-                    String base64 = encodeImageToBase64(chartPath);
-                    charts.add(new ChartEmbed("区域销售分布", base64, "各区域销售额对比", chartPath));
-                    System.out.println("区域图表已生成: " + chartPath);
-                } catch (Exception e) {
-                    System.err.println("区域图表生成失败: " + e.getMessage());
                 }
             }
 
