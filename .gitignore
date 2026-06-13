@@ -40,6 +40,9 @@ docs/
 output/
 .claude/
 
+# 本地设计/规格文档（superpowers brainstorming），不提交
+docs/superpowers/
+
 # SQLite 数据库
 data/
 logs/
