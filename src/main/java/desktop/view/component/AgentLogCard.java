@@ -23,7 +23,20 @@ public class AgentLogCard extends VBox {
 
     private static final DateTimeFormatter TIME_FMT = DateTimeFormatter.ofPattern("HH:mm:ss");
 
+    /** 节点名 → 中文展示名。 */
+    private static final java.util.Map<String, String> DISPLAY_NAMES = java.util.Map.of(
+        "parser", "数据解析",
+        "cleaner", "数据清洗",
+        "planner", "智能规划",
+        "analyzer", "数据分析",
+        "insight", "深度洞察",
+        "chart", "图表生成",
+        "report", "报告生成"
+    );
+
     private final VBox logBody;
+    private final VBox subTaskBox;
+    private final java.util.Map<String, Label> subTaskLabels = new java.util.LinkedHashMap<>();
     private final Label statusLabel;
     private final Label durationLabel;
     private final Label toggleButton;
@@ -38,7 +51,7 @@ public class AgentLogCard extends VBox {
         header.getStyleClass().add("agent-log-header");
         header.setAlignment(Pos.CENTER_LEFT);
 
-        Label nameLabel = new Label(nodeName);
+        Label nameLabel = new Label(DISPLAY_NAMES.getOrDefault(nodeName, nodeName));
         nameLabel.getStyleClass().add("agent-log-name");
 
         Label stageLabel = new Label("阶段 " + stageIndex + "/7");
@@ -59,12 +72,17 @@ public class AgentLogCard extends VBox {
 
         header.getChildren().addAll(nameLabel, stageLabel, spacer, statusLabel, durationLabel, toggleButton);
 
+        // ── 子步骤区（迭代节点用）──
+        subTaskBox = new VBox(2);
+        subTaskBox.getStyleClass().add("agent-log-body");
+        subTaskBox.setPadding(new javafx.geometry.Insets(4, 0, 0, 20));
+
         // ── 日志主体（可折叠）──
         logBody = new VBox(2);
         logBody.getStyleClass().add("agent-log-body");
         logBody.setPadding(new javafx.geometry.Insets(4, 0, 0, 20));
 
-        getChildren().addAll(header, logBody);
+        getChildren().addAll(header, subTaskBox, logBody);
     }
 
     /** 添加一条日志。 */
@@ -83,11 +101,40 @@ public class AgentLogCard extends VBox {
         line.setWrapText(true);
         logBody.getChildren().add(line);
 
-        // 确保展开
+        ensureExpanded();
+    }
+
+    /**
+     * 添加/更新一个子步骤行。同一 label 多次调用会更新其状态图标。
+     */
+    public void addSubTask(int index, int total, String label, String statusGlyph) {
+        Label line = subTaskLabels.computeIfAbsent(label, k -> {
+            Label l = new Label();
+            l.getStyleClass().addAll("log-line", "log-result");
+            l.setWrapText(true);
+            subTaskBox.getChildren().add(l);
+            return l;
+        });
+        line.setText(String.format("▸ %d/%d %s %s", index, total, label, statusGlyph));
+        ensureExpanded();
+    }
+
+    /** 整阶段完成：标记 ✅ 并延迟折叠。区别于单任务完成。 */
+    public void markPhaseComplete(long durationMs) {
+        statusLabel.setText("✅");
+        durationLabel.setText(durationMs + "ms");
+        javafx.animation.PauseTransition delay = new javafx.animation.PauseTransition(Duration.millis(300));
+        delay.setOnFinished(e -> collapse());
+        delay.play();
+    }
+
+    private void ensureExpanded() {
         if (!expanded) {
             expanded = true;
             logBody.setVisible(true);
             logBody.setManaged(true);
+            subTaskBox.setVisible(true);
+            subTaskBox.setManaged(true);
             toggleButton.setText("▼");
         }
     }
@@ -126,6 +173,8 @@ public class AgentLogCard extends VBox {
         expanded = false;
         logBody.setVisible(false);
         logBody.setManaged(false);
+        subTaskBox.setVisible(false);
+        subTaskBox.setManaged(false);
         toggleButton.setText("▶");
     }
 
@@ -136,6 +185,8 @@ public class AgentLogCard extends VBox {
             expanded = true;
             logBody.setVisible(true);
             logBody.setManaged(true);
+            subTaskBox.setVisible(true);
+            subTaskBox.setManaged(true);
             toggleButton.setText("▼");
         }
     }
