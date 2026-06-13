@@ -52,6 +52,20 @@ public class PipelineProgressView extends HBox {
         }
     }
 
+    /**
+     * 把所有 index 之前仍为 ACTIVE 的阶段标记为 COMPLETED。
+     * <p>
+     * 用于迭代型节点（analyzer/insight）反复执行时，确保进度条只前进不回退：
+     * 当后续阶段启动时，才把前面的迭代阶段推进到完成。
+     */
+    public void completeBefore(int index) {
+        for (int i = 0; i < index && i < 7; i++) {
+            if (stages[i].status == StageStatus.ACTIVE) {
+                updateStage(i, StageStatus.COMPLETED);
+            }
+        }
+    }
+
     /** 更新指定阶段的状态。 */
     public void updateStage(int index, StageStatus status) {
         if (index < 0 || index >= 7) return;
