@@ -1,5 +1,7 @@
 package dataAnalysis;
 
+import dataAnalysis.model.SubTaskEvent;
+
 /**
  * 数据分析管线进度监听器。
  * <p>
@@ -39,6 +41,17 @@ public interface ProgressListener {
      * @param error    错误描述
      */
     void onNodeError(String nodeName, String error);
+
+    /**
+     * 迭代型节点（analyzer / insight）的子任务进度。
+     * <p>
+     * 默认空实现，便于只关心节点级进度的调用方无需实现。
+     *
+     * @param nodeName 节点名称（analyzer / insight）
+     * @param event    子任务事件
+     */
+    default void onSubTask(String nodeName, SubTaskEvent event) {
+    }
 
     /**
      * 整条管线执行完成。
