@@ -216,6 +216,9 @@ public class ChatViewController implements Initializable {
         // 日志卡片跟踪表：节点名 → AgentLogCard
         java.util.Map<String, AgentLogCard> logCards = new java.util.LinkedHashMap<>();
 
+        // 迭代型节点：会多次 onNodeStart/onNodeComplete，需复用同一张卡片并展示子步骤
+        final java.util.Set<String> ITERATING_NODES = java.util.Set.of("analyzer", "insight");
+
         scrollToBottom();
         setInputEnabled(false);
 
@@ -225,13 +228,18 @@ public class ChatViewController implements Initializable {
             public void onNodeStart(String nodeName, int stageIndex) {
                 if (!requestSessionId.equals(currentSessionId)) return;
                 int idx = stageIndex - 1;
+
+                // 推进：把更早的 ACTIVE 阶段标记完成（迭代节点不回退）
+                progressView.completeBefore(idx);
                 progressView.updateStage(idx, PipelineProgressView.StageStatus.ACTIVE);
 
-                // 创建日志卡片
-                AgentLogCard card = new AgentLogCard(nodeName, idx + 1);
-                logCards.put(nodeName, card);
-                messagesContainer.getChildren().add(card);
-                scrollToBottom();
+                // 迭代节点复用已有卡片，非迭代节点新建
+                if (!ITERATING_NODES.contains(nodeName) || !logCards.containsKey(nodeName)) {
+                    AgentLogCard card = new AgentLogCard(nodeName, idx + 1);
+                    logCards.put(nodeName, card);
+                    messagesContainer.getChildren().add(card);
+                    scrollToBottom();
+                }
             }
 
             @Override
@@ -254,13 +262,34 @@ public class ChatViewController implements Initializable {
             @Override
             public void onNodeComplete(String nodeName, long durationMs) {
                 if (!requestSessionId.equals(currentSessionId)) return;
-                int idx = progressView.indexOfNode(nodeName);
-                progressView.updateStage(idx, PipelineProgressView.StageStatus.COMPLETED);
                 AgentLogCard card = logCards.get(nodeName);
-                if (card != null) {
-                    card.addLog("完成", AgentLogCard.LogLevel.RESULT);
-                    card.setCompleted(durationMs);
+                if (ITERATING_NODES.contains(nodeName)) {
+                    // 迭代节点：气泡保持 ACTIVE（由后续阶段 completeBefore 推进），
+                    // 仅在阶段结束时折叠卡片
+                    if (card != null) {
+                        card.markPhaseComplete(durationMs);
+                    }
+                } else {
+                    int idx = progressView.indexOfNode(nodeName);
+                    progressView.updateStage(idx, PipelineProgressView.StageStatus.COMPLETED);
+                    if (card != null) {
+                        card.addLog("完成", AgentLogCard.LogLevel.RESULT);
+                        card.setCompleted(durationMs);
+                    }
                 }
+            }
+
+            @Override
+            public void onSubTask(String nodeName, dataAnalysis.model.SubTaskEvent event) {
+                if (!requestSessionId.equals(currentSessionId)) return;
+                AgentLogCard card = logCards.get(nodeName);
+                if (card == null) return;
+                String glyph = switch (event.status()) {
+                    case STARTED -> "⏳";
+                    case COMPLETED -> "✓";
+                    case ERROR -> "✗";
+                };
+                card.addSubTask(event.index(), event.total(), event.label(), glyph);
             }
 
             @Override
