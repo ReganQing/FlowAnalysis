@@ -176,9 +176,9 @@ public class DataAnalyzerNode implements NodeAction<AnalysisState> {
                 ? "{\"error\": \"缺少分类列或数值列，无法做对比分析\"}"
                 : analysisTools.regionalSalesAnalysis(table, groupCol, valueCol);
             case OUTLIER -> {
-                String c1 = orElse(params.get("col1"),
+                String c1 = orElse(correlationColumn(params, 0, null, "col1"),
                     profile != null ? ColumnSelection.firstNumeric(profile) : null);
-                String c2 = orElse(params.get("col2"),
+                String c2 = orElse(correlationColumn(params, 1, null, "col2"),
                     profile != null ? ColumnSelection.secondNumeric(profile) : null);
                 yield (c1 == null || c2 == null)
                     ? "{\"error\": \"数值列不足，无法做离群分析\"}"

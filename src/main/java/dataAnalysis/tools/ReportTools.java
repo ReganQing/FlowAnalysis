@@ -65,13 +65,13 @@ public class ReportTools {
 
         // 保存报告
         String filename = String.format("analysis_report_%s.md", TIMESTAMP.format(LocalDateTime.now()));
-        String filepath = OUTPUT_DIR + filename;
+        File outputFile = new File(OUTPUT_DIR, filename).getAbsoluteFile();
 
-        try (FileWriter writer = new FileWriter(filepath)) {
+        try (FileWriter writer = new FileWriter(outputFile)) {
             writer.write(report.toString());
         }
 
-        return filepath;
+        return outputFile.getAbsolutePath();
     }
 
     /**
