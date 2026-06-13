@@ -1,9 +1,11 @@
 package dataAnalysis.nodes;
 
 import dataAnalysis.AnalysisState;
+import dataAnalysis.ColumnSelection;
 import dataAnalysis.model.AnalysisPlan;
 import dataAnalysis.model.AnalysisTask;
 import dataAnalysis.model.AnalysisType;
+import dataAnalysis.model.DataProfile;
 import dataAnalysis.router.ModelRouter;
 import dataAnalysis.tools.AnalysisTools;
 import dataAnalysis.tools.BaseTools;
@@ -54,7 +56,7 @@ public class DataAnalyzerNode implements NodeAction<AnalysisState> {
             System.out.println("执行分析任务: " + task.target());
 
             // 纯计算：执行统计工具获取原始 JSON 结果
-            String result = executeTask(table, task);
+            String result = executeTask(table, task, state.dataProfile());
             System.out.println("分析结果: " + (result.length() > 200 ? result.substring(0, 200) + "..." : result));
 
             // AI 解读：将原始统计结果转化为中文叙述
@@ -118,34 +120,54 @@ public class DataAnalyzerNode implements NodeAction<AnalysisState> {
         }
     }
 
-    private String executeTask(Table table, AnalysisTask task) {
+    private String executeTask(Table table, AnalysisTask task, DataProfile profile) {
         var params = task.parameters();
+        String dateCol = parameter(params, null, "date", "dateColumn", "date_column");
+        String valueCol = parameter(params, null, "valueColumn", "value_column", "amount");
+        String groupCol = parameter(params, null, "groupColumn", "group_column",
+            "categoryColumn", "category_column", "region");
+        String granularity = parameter(params, "month", "interval", "timeGranularity", "time_granularity");
+
+        // profile 可用时，按列类型补齐缺失的列名
+        if (profile != null) {
+            if (dateCol == null) dateCol = ColumnSelection.firstDate(profile);
+            if (valueCol == null) valueCol = ColumnSelection.firstNumeric(profile);
+            if (groupCol == null) groupCol = ColumnSelection.firstCategorical(profile);
+        }
+
         return switch (task.type()) {
-            case TREND -> analysisTools.salesTrendAnalysis(
-                table,
-                parameter(params, "date", "dateColumn", "date_column"),
-                parameter(params, "amount", "valueColumn", "value_column"),
-                parameter(params, "month", "interval", "timeGranularity", "time_granularity")
-            );
+            case TREND -> (dateCol == null || valueCol == null)
+                ? "{\"error\": \"缺少日期列或数值列，无法做趋势分析\"}"
+                : analysisTools.salesTrendAnalysis(table, dateCol, valueCol, granularity);
             case DISTRIBUTION -> analysisTools.descriptiveStats(table);
-            case CORRELATION -> analysisTools.correlationAnalysis(
-                table,
-                correlationColumn(params, 0, "quantity", "col1"),
-                correlationColumn(params, 1, "amount", "col2")
-            );
-            case COMPARISON -> analysisTools.regionalSalesAnalysis(
-                table,
-                parameter(params, "region", "groupColumn", "group_column",
-                    "categoryColumn", "category_column"),
-                parameter(params, "amount", "valueColumn", "value_column")
-            );
-            case OUTLIER -> analysisTools.correlationAnalysis(
-                table,
-                params.getOrDefault("col1", "quantity"),
-                params.getOrDefault("col2", "amount")
-            );
+            case CORRELATION -> {
+                String c1 = orElse(correlationColumn(params, 0, null, "col1"),
+                    profile != null ? ColumnSelection.firstNumeric(profile) : null);
+                String c2 = orElse(correlationColumn(params, 1, null, "col2"),
+                    profile != null ? ColumnSelection.secondNumeric(profile) : null);
+                yield (c1 == null || c2 == null)
+                    ? "{\"error\": \"数值列不足，无法做相关性分析\"}"
+                    : analysisTools.correlationAnalysis(table, c1, c2);
+            }
+            case COMPARISON -> (groupCol == null || valueCol == null)
+                ? "{\"error\": \"缺少分类列或数值列，无法做对比分析\"}"
+                : analysisTools.regionalSalesAnalysis(table, groupCol, valueCol);
+            case OUTLIER -> {
+                String c1 = orElse(params.get("col1"),
+                    profile != null ? ColumnSelection.firstNumeric(profile) : null);
+                String c2 = orElse(params.get("col2"),
+                    profile != null ? ColumnSelection.secondNumeric(profile) : null);
+                yield (c1 == null || c2 == null)
+                    ? "{\"error\": \"数值列不足，无法做离群分析\"}"
+                    : analysisTools.correlationAnalysis(table, c1, c2);
+            }
             default -> "{\"note\": \"不支持的分析类型\"}";
         };
+    }
+
+    /** 返回第一个非空白值，全为空则返回 fallback。 */
+    private static String orElse(String value, String fallback) {
+        return (value == null || value.isBlank()) ? fallback : value;
     }
 
     private static String parameter(Map<String, String> params, String fallback, String... keys) {
