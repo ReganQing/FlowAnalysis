@@ -28,6 +28,11 @@ public class DataAnalyzerNode implements NodeAction<AnalysisState> {
         this.model = modelRouter.getModelForTask(ModelRouter.TaskType.ANALYSIS);
     }
 
+    /** 仅供测试：不依赖 ModelRouter（executeTask 不使用 model）。 */
+    DataAnalyzerNode() {
+        this.model = null;
+    }
+
     @Override
     public Map<String, Object> apply(AnalysisState state) {
         System.out.println("=== [DataAnalyzerNode] 开始执行 ===");
@@ -120,7 +125,7 @@ public class DataAnalyzerNode implements NodeAction<AnalysisState> {
         }
     }
 
-    private String executeTask(Table table, AnalysisTask task, DataProfile profile) {
+    String executeTask(Table table, AnalysisTask task, DataProfile profile) {
         var params = task.parameters();
         String dateCol = parameter(params, null, "date", "dateColumn", "date_column");
         String valueCol = parameter(params, null, "valueColumn", "value_column", "amount");
